@@ -108,7 +108,7 @@ Output format:
 1. List of existing tests that touch this feature (file + what they
    check), or "NONE FOUND"
 2. Quality verdict: strong / weak / missing, with reasoning
-3. Three edge cases that are not currently tested
+3. Any edge cases that are not currently tested
 
 Rules:
 - Only count a test as covering this feature if you can point to the
@@ -166,7 +166,7 @@ Rules:
 ```
 You are a product-minded engineer assessing long-term value.
 
-Is the voice ordering feature useful and worth maintaining over the
+Is the voice ordering feature and the donation service useful and worth maintaining over the
 next few years? Consider adoption cost, fragility, and whether it
 solves a real user problem.
 
