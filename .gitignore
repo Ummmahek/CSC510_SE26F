@@ -4,4 +4,4 @@ node_modules/
 venv/
 .DS_Store
 coverage/
-.omc/
+.omc/.idea/
