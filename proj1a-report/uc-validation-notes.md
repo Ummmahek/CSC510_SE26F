@@ -22,7 +22,7 @@ npx jest tests/uc10-redeem-points.test.js tests/uc14-manage-menu.test.js tests/u
 Or one use case at a time, e.g. `npx jest tests/uc16-pickup-deliver.test.js --no-coverage --verbose`.
 
 **Environment note:** Firestore is mocked (`proj2/tests/helpers/fakeFirestore.js`), not
-the real Firebase emulator — Docker, `gcloud`, and the `firebase` CLI were not available
+the real Firebase emulator — Docker, `gcloud` and the `firebase` CLI were not available
 in this environment, so no local run against the real emulator was possible. The mock
 mirrors real Firestore's behavior where it matters for these tests (e.g. `update()` on a
 missing document rejects; reads/writes resolve asynchronously so genuine races can
@@ -276,7 +276,7 @@ Main blind spots in the inherited suite:
   anything already in the repo — they were only found by writing new use-case-level
   tests against the live routes.
 - The suite that does exist can't even be executed, so in practice its real coverage of
-  anything is zero, not "narrow" — it's a hard blocker, not a gap.
+  anything is zero, not "narrow", it's a hard blocker, not a gap.
 
 In short: the inherited suite is (or was, before the deletion) useful for pure-function
 business logic, but provides no evidence at all about whether the actual user-facing
