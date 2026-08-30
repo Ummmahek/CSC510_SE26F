@@ -195,4 +195,22 @@ describe('UC10: Redeem points for a discount (Customer)', () => {
   // devDependencies -- exercising Cart.tsx would mean standing up a whole new frontend test
   // stack, which felt out of scope for a single secondary/time-permitting note. Flagging this
   // explicitly rather than silently skipping it.
+
+  // --- Intentionally-failing "doc expectation" test ---
+  // The STAR FINDING test above asserts what the code ACTUALLY does (both requests succeed).
+  // This one instead asserts the correct, expected behavior implied by usecases.md's redemption
+  // flow -- a balance that can only cover one of two concurrent requests should let exactly one
+  // through -- on purpose, so this is a visible red test in `npm test` / CI, not just a comment.
+  // Expected to fail until points.js:82-127 gets a real transaction around read-then-update.
+  test('[DOC EXPECTATION] concurrent redemptions must not exceed the available balance (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior)', async () => {
+    seedPoints('cust-1', 100);
+
+    const [resA, resB] = await Promise.all([
+      request(server).post('/api/points/use').send({ customerId: 'cust-1', points: 60 }),
+      request(server).post('/api/points/use').send({ customerId: 'cust-1', points: 60 }),
+    ]);
+
+    const successCount = [resA, resB].filter((r) => r.status === 200).length;
+    expect(successCount).toBe(1); // exactly one of the two should be affordable
+  });
 });

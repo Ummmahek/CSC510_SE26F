@@ -138,4 +138,24 @@ describe('UC14: Manage the menu (Restaurant)', () => {
       .query({ ownerId: 'owner-1' });
     expect(withQuery.body).toEqual({ user: null, restaurant: null });
   });
+
+  // --- Intentionally-failing "doc expectation" test ---
+  // Everything above asserts what the code ACTUALLY does. This one instead asserts what
+  // usecases.md 3c PROMISES ("silently creates the restaurant record if none exists"), on
+  // purpose, so this failure is visible in plain `npm test` / CI output and in the demo video
+  // -- not just buried in a passing test's comments. This is expected to fail until the app
+  // either gets a real Restaurant.findByOwnerId() or the doc is corrected to match reality.
+  test('[DOC EXPECTATION] usecases.md 3c: PUT /profile should silently create a restaurant when none exists (EXPECTED TO FAIL -- see MISMATCH test above for the real behavior)', async () => {
+    const res = await request(server)
+      .put('/api/restaurant/profile')
+      .send({
+        email: 'owner1@example.com',
+        password: 'pw',
+        restaurant: { name: 'New Spot', cuisine: 'Diner' },
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.restaurant).toBeDefined();
+    expect(res.body.restaurant.name).toBe('New Spot');
+  });
 });

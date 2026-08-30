@@ -212,4 +212,32 @@ describe('UC16: Pick up and deliver an order (Delivery partner)', () => {
 
   // Note only, no test: usecases.md 3a ("no proof of delivery exists at all") describes an
   // absent feature, not a code path we can exercise -- there is nothing to call.
+
+  // --- Intentionally-failing "doc expectation" test ---
+  // The STAR FINDING tests above assert what the code ACTUALLY does (an uninvolved partner
+  // gets paid). This one instead asserts the correct, expected behavior implied by UC16 --
+  // only the assigned partner should be able to complete a delivery and be paid for it -- on
+  // purpose, so this is a visible red test in `npm test` / CI, not just a comment. Expected to
+  // fail until delivery.js:223-268 compares the caller against orderData.deliveryPartnerId.
+  test('[DOC EXPECTATION] only the assigned delivery partner should be able to complete an order and be paid (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior)', async () => {
+    const { riderA, riderB, orderId } = seedDeliveryFixture(db);
+    // Give riderB an unrelated active order so the separate updateDeliveryStatus crash doesn't
+    // muddy this specific assertion -- this test is about the ownership check, not that bug.
+    db.__seed('orders', 'order-decoy', {
+      id: 'order-decoy',
+      customerId: 'customer-2',
+      restaurantId: 'restaurant-1',
+      deliveryPartnerId: riderB.id,
+      status: 'out_for_delivery',
+      deliveryFee: 1,
+      tipAmount: 0,
+      totalAmount: 10,
+    });
+    await claim(riderA.id, orderId);
+
+    await request(server).post(`/api/delivery/deliver/${orderId}`).send({ riderId: riderB.id });
+
+    const riderBDoc = await db.collection('users').doc(riderB.id).get();
+    expect(riderBDoc.data().totalEarnings).toBe(0); // riderB was never assigned -- should never be paid
+  });
 });
