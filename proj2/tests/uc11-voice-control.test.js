@@ -7,13 +7,15 @@
 // GEMINI_API_KEY is set/unset per test and restored afterward.
 
 // axios must be mocked at the EXACT file server/routes/voice.js resolves. Two traps,
-// both hit while writing this: (1) voice.js lives under server/, so its 'axios' is
-// server/node_modules/axios — a bare jest.mock('axios') from this root-run test
-// mocks nothing and the suite silently makes real HTTP calls to Google; (2) the
-// package directory and its entry file are different registry keys — requiring
-// '../server/node_modules/axios' lands on index.js while voice.js's require('axios')
-// lands on dist/node/axios.cjs, so the mock must target the .cjs entry itself.
-// A factory is used because Jest cannot parse axios's ESM sources to auto-mock them.
+// both hit while writing this: (1) axios lives only in server/node_modules, so a bare
+// jest.mock('axios') from this root-run test fails loudly with MODULE_NOT_FOUND;
+// (2) the subtle one — mocking the package DIRECTORY ('../server/node_modules/axios')
+// resolves to index.js while voice.js's require('axios') resolves to
+// dist/node/axios.cjs: different registry keys, so that mock silently applies to
+// nothing and the suite makes REAL HTTP calls to Google. The mock must target the
+// .cjs entry itself. A factory is used because Jest cannot parse axios's ESM sources
+// to auto-mock them. Safety net: tests assert axios.post was (not) called, which
+// throws if the mock ever stops being the resolved instance.
 const AXIOS_ENTRY = '../server/node_modules/axios/dist/node/axios.cjs';
 jest.mock('../server/node_modules/axios/dist/node/axios.cjs', () => ({ post: jest.fn() }));
 
@@ -28,18 +30,13 @@ function geminiReply(text) {
   return { data: { candidates: [{ content: { parts: [{ text }] } }] } };
 }
 
+// supertest accepts the app object directly — no real TCP listener needed.
+const app = buildApp({ '/api/voice': voiceRoutes });
+
 describe('UC11: Control the app by voice (Customer)', () => {
-  let server;
-
-  beforeAll(() => {
-    const app = buildApp({ '/api/voice': voiceRoutes });
-    server = app.listen(0);
-  });
-
-  afterAll((done) => {
+  afterAll(() => {
     if (ORIGINAL_KEY === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = ORIGINAL_KEY;
-    server.close(done);
   });
 
   beforeEach(() => {
@@ -50,7 +47,7 @@ describe('UC11: Control the app by voice (Customer)', () => {
   test('main success scenario: spoken text is classified into one of the five known commands (voice.js:31-77)', async () => {
     axios.post.mockResolvedValue(geminiReply('openCart'));
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'show me my cart' });
 
@@ -61,7 +58,7 @@ describe('UC11: Control the app by voice (Customer)', () => {
   test('a whitespace-padded model reply is trimmed before matching (voice.js:67-68)', async () => {
     axios.post.mockResolvedValue(geminiReply('  goHome\n'));
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'take me back to the start' });
 
@@ -69,18 +66,19 @@ describe('UC11: Control the app by voice (Customer)', () => {
     expect(res.body.actionId).toBe('goHome');
   });
 
-  test('extension 1a: missing or non-string userText -> 400 (voice.js:35-37)', async () => {
-    for (const body of [{}, { userText: '' }, { userText: 42 }]) {
-      const res = await request(server).post('/api/voice/classify').send(body);
+  test.each([[{}], [{ userText: '' }], [{ userText: 42 }]])(
+    'extension 1a: missing or non-string userText %j -> 400 (voice.js:35-37)',
+    async (body) => {
+      const res = await request(app).post('/api/voice/classify').send(body);
       expect(res.status).toBe(400);
+      expect(axios.post).not.toHaveBeenCalled();
     }
-    expect(axios.post).not.toHaveBeenCalled();
-  });
+  );
 
   test('extension 2a: no GEMINI_API_KEY -> 500, feature dead (voice.js:39-42)', async () => {
     delete process.env.GEMINI_API_KEY;
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'open my cart' });
 
@@ -92,7 +90,7 @@ describe('UC11: Control the app by voice (Customer)', () => {
   test('extension 2b: unparseable model reply -> 422 with the raw text echoed (voice.js:71-75)', async () => {
     axios.post.mockResolvedValue(geminiReply('I think the user wants the cart page'));
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'cart please' });
 
@@ -103,7 +101,7 @@ describe('UC11: Control the app by voice (Customer)', () => {
   test('extension 2c: upstream Gemini HTTP error status is passed through (voice.js:83-87)', async () => {
     axios.post.mockRejectedValue({ response: { status: 429, data: { error: 'quota' } } });
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'open my cart' });
 
@@ -116,7 +114,7 @@ describe('UC11: Control the app by voice (Customer)', () => {
     // such action id exists. The doc's original name "Order by voice" was unimplementable.
     axios.post.mockResolvedValue(geminiReply('addToCart'));
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/voice/classify')
       .send({ userText: 'order a pepperoni pizza' });
 

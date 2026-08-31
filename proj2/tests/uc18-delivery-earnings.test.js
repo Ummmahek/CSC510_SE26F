@@ -18,16 +18,10 @@ const deliveryRoutes = require('../server/routes/delivery');
 const { buildApp } = require('./helpers/buildApp');
 const { seedDeliveryFixture } = require('./helpers/deliveryFixtures');
 
+// supertest accepts the app object directly — no real TCP listener needed.
+const app = buildApp({ '/api/delivery': deliveryRoutes });
+
 describe('UC18: Review my delivery earnings (Delivery partner)', () => {
-  let server;
-
-  beforeAll(() => {
-    const app = buildApp({ '/api/delivery': deliveryRoutes });
-    server = app.listen(0);
-  });
-
-  afterAll((done) => { server.close(done); });
-
   beforeEach(() => db.__reset());
 
   // Keep the rider "busy" so POST /deliver skips the updateDeliveryStatus branch
@@ -52,7 +46,7 @@ describe('UC18: Review my delivery earnings (Delivery partner)', () => {
       order: { deliveryPartnerId: 'rider-A', status: 'out_for_delivery', deliveryFee: 3, tipAmount: 2 },
     });
 
-    const res = await request(server).get(`/api/delivery/orders?riderId=${riderA.id}`);
+    const res = await request(app).get(`/api/delivery/orders?riderId=${riderA.id}`);
 
     expect(res.status).toBe(200);
     const order = res.body.orders.find((o) => o.id === orderId);
@@ -60,7 +54,7 @@ describe('UC18: Review my delivery earnings (Delivery partner)', () => {
   });
 
   test('missing riderId -> 400 (delivery.js:42-44)', async () => {
-    const res = await request(server).get('/api/delivery/orders');
+    const res = await request(app).get('/api/delivery/orders');
     expect(res.status).toBe(400);
   });
 
@@ -69,8 +63,9 @@ describe('UC18: Review my delivery earnings (Delivery partner)', () => {
       order: { deliveryPartnerId: 'rider-A', status: 'out_for_delivery', deliveryFee: 'free', tipAmount: undefined },
     });
 
-    const res = await request(server).get('/api/delivery/orders?riderId=rider-A');
+    const res = await request(app).get('/api/delivery/orders?riderId=rider-A');
 
+    expect(res.body.orders).toHaveLength(1);
     expect(res.body.orders[0].earning).toBe(0);
   });
 
@@ -93,11 +88,11 @@ describe('UC18: Review my delivery earnings (Delivery partner)', () => {
     });
     seedBusyWork('rider-A');
 
-    const first = await request(server).post('/api/delivery/deliver/order-1').send({ riderId: riderA.id });
+    const first = await request(app).post('/api/delivery/deliver/order-1').send({ riderId: riderA.id });
     expect(first.status).toBe(200);
     expect(first.body.earning).toBe(5);
 
-    const second = await request(server).post('/api/delivery/deliver/order-2').send({ riderId: riderA.id });
+    const second = await request(app).post('/api/delivery/deliver/order-2').send({ riderId: riderA.id });
     expect(second.status).toBe(200);
     expect(second.body.earning).toBe(5);
 
@@ -105,19 +100,22 @@ describe('UC18: Review my delivery earnings (Delivery partner)', () => {
     expect(riderDoc.data().totalEarnings).toBe(10);
   });
 
-  test('two-bookkeeping-systems finding: totalEarnings is written on delivery but GET /orders never returns it — the client recomputes from the order list instead (Insights.tsx:23-43)', async () => {
-    const { riderA } = seedDeliveryFixture(db, {
+  test('two-bookkeeping-systems finding: totalEarnings is written on delivery but GET /orders never serves it — the client recomputes from the order list instead (delivery.js:47-77, Insights.tsx:23-43)', async () => {
+    seedDeliveryFixture(db, {
       order: { deliveryPartnerId: 'rider-A', status: 'out_for_delivery' },
     });
-    // Pretend the server-side ledger already diverged (e.g. from a delivery whose
-    // order document was later deleted or reassigned).
-    db.__seed('users', 'rider-A', { ...riderA, totalEarnings: 999 });
 
-    const res = await request(server).get('/api/delivery/orders?riderId=rider-A');
+    const res = await request(app).get('/api/delivery/orders?riderId=rider-A');
 
-    // The response carries per-order earnings only; the 999 ledger value is
-    // invisible to the earnings screen, so the two systems can disagree silently.
+    // The response is built solely from order documents (delivery.js:47-49 queries
+    // only the orders collection); the user document holding the totalEarnings
+    // ledger is never read on this path. So the earnings screen and the ledger are
+    // two independent bookkeeping systems that can disagree silently.
     expect(res.status).toBe(200);
-    expect(JSON.stringify(res.body)).not.toContain('999');
+    expect(Object.keys(res.body)).toEqual(['orders']);
+    expect(res.body.orders).toHaveLength(1);
+    expect(res.body.orders[0]).not.toHaveProperty('totalEarnings');
+    // The per-order earning IS present — that's the number the client sums.
+    expect(res.body.orders[0]).toHaveProperty('earning');
   });
 });

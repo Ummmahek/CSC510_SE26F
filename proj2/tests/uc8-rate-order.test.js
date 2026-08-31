@@ -12,16 +12,10 @@ const { db } = require('../server/config/firebase');
 const orderRoutes = require('../server/routes/orders');
 const { buildApp } = require('./helpers/buildApp');
 
+// supertest accepts the app object directly — no real TCP listener needed.
+const app = buildApp({ '/api/orders': orderRoutes });
+
 describe('UC8: Rate a delivered order (Customer)', () => {
-  let server;
-
-  beforeAll(() => {
-    const app = buildApp({ '/api/orders': orderRoutes });
-    server = app.listen(0);
-  });
-
-  afterAll((done) => { server.close(done); });
-
   beforeEach(() => db.__reset());
 
   function seedOrder(id, overrides = {}) {
@@ -40,7 +34,7 @@ describe('UC8: Rate a delivered order (Customer)', () => {
   test('main success scenario: a 1-5 star rating on an own delivered order is stored once (orders.js:245-303)', async () => {
     seedOrder('order-1');
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 4, review: 'good' });
 
@@ -54,7 +48,7 @@ describe('UC8: Rate a delivered order (Customer)', () => {
   test('review is optional: rating without review stores an empty review string', async () => {
     seedOrder('order-1');
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 5 });
 
@@ -63,19 +57,20 @@ describe('UC8: Rate a delivered order (Customer)', () => {
     expect(doc.data().ratings.customer.review).toBe('');
   });
 
-  test('extension 1a: rating outside 1-5 or non-integer -> 400 (orders.js:246)', async () => {
-    seedOrder('order-1');
+  test.each([[0], [6], [3.5], ['four']])(
+    'extension 1a: invalid rating %p -> 400 (orders.js:246)',
+    async (rating) => {
+      seedOrder('order-1');
 
-    for (const rating of [0, 6, 3.5, 'four']) {
-      const res = await request(server)
+      const res = await request(app)
         .post('/api/orders/order-1/rate')
         .send({ customerId: 'cust-1', rating });
       expect(res.status).toBe(400);
     }
-  });
+  );
 
   test('extension 2a: order not found -> 404 (orders.js:262)', async () => {
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/orders/no-such-order/rate')
       .send({ customerId: 'cust-1', rating: 4 });
 
@@ -85,7 +80,7 @@ describe('UC8: Rate a delivered order (Customer)', () => {
   test("extension 2b: another customer's order -> 403 (orders.js:269)", async () => {
     seedOrder('order-1');
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'someone-else', rating: 4 });
 
@@ -95,7 +90,7 @@ describe('UC8: Rate a delivered order (Customer)', () => {
   test('extension 2c: order not delivered yet -> 400 (orders.js:273)', async () => {
     seedOrder('order-1', { status: 'preparing' });
 
-    const res = await request(server)
+    const res = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 4 });
 
@@ -106,12 +101,12 @@ describe('UC8: Rate a delivered order (Customer)', () => {
   test('extension 2d: already rated -> 400, and the first rating survives (orders.js:278)', async () => {
     seedOrder('order-1');
 
-    const first = await request(server)
+    const first = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 2, review: 'first' });
     expect(first.status).toBe(200);
 
-    const second = await request(server)
+    const second = await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 5, review: 'second' });
     expect(second.status).toBe(400);
@@ -120,18 +115,18 @@ describe('UC8: Rate a delivered order (Customer)', () => {
     expect(doc.data().ratings.customer).toMatchObject({ rating: 2, review: 'first' });
   });
 
-  test('extension 3a (documented derivation): rating is written only to the order document — no stored restaurant average is updated (orders.js:291-294)', async () => {
+  test('extension 3a (documented derivation): rating is written only to the order document — the restaurant document is byte-identical before and after (orders.js:291-294)', async () => {
     seedOrder('order-1');
     db.__seed('users', 'rest-1', { role: 'restaurant', profile: { restaurantName: 'R' } });
+    const before = (await db.collection('users').doc('rest-1').get()).data();
 
-    await request(server)
+    await request(app)
       .post('/api/orders/order-1/rate')
       .send({ customerId: 'cust-1', rating: 4 });
 
-    // The restaurant's user document is untouched: averages are recomputed at read
-    // time by scanning orders (customer.js:97-122), which UC4/UC8 3a document.
-    const restaurant = await db.collection('users').doc('rest-1').get();
-    expect(restaurant.data().rating).toBeUndefined();
-    expect(restaurant.data().averageRating).toBeUndefined();
+    // Whole-document comparison (not a guessed field name): averages are recomputed
+    // at read time by scanning orders (customer.js:97-122), which UC4/UC8 3a document.
+    const after = (await db.collection('users').doc('rest-1').get()).data();
+    expect(after).toEqual(before);
   });
 });

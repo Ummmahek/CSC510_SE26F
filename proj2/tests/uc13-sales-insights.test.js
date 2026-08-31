@@ -15,16 +15,10 @@ const { db } = require('../server/config/firebase');
 const orderRoutes = require('../server/routes/orders');
 const { buildApp } = require('./helpers/buildApp');
 
+// supertest accepts the app object directly — no real TCP listener needed.
+const app = buildApp({ '/api/orders': orderRoutes });
+
 describe('UC13: Review sales performance (Restaurant)', () => {
-  let server;
-
-  beforeAll(() => {
-    const app = buildApp({ '/api/orders': orderRoutes });
-    server = app.listen(0);
-  });
-
-  afterAll((done) => { server.close(done); });
-
   beforeEach(() => db.__reset());
 
   function seedOrder(id, restaurantId, overrides = {}) {
@@ -45,7 +39,7 @@ describe('UC13: Review sales performance (Restaurant)', () => {
     seedOrder('order-2', 'rest-1', { totalAmount: 25 });
     seedOrder('order-3', 'rest-OTHER');
 
-    const res = await request(server).get('/api/orders/restaurant?restaurantId=rest-1');
+    const res = await request(app).get('/api/orders/restaurant?restaurantId=rest-1');
 
     expect(res.status).toBe(200);
     expect(res.body.orders).toHaveLength(2);
@@ -55,7 +49,7 @@ describe('UC13: Review sales performance (Restaurant)', () => {
   test('data contract for the client-side aggregation: totalAmount, status, and serialized dates are present (orders.js:127-137)', async () => {
     seedOrder('order-1', 'rest-1');
 
-    const res = await request(server).get('/api/orders/restaurant?restaurantId=rest-1');
+    const res = await request(app).get('/api/orders/restaurant?restaurantId=rest-1');
 
     const order = res.body.orders[0];
     expect(order.totalAmount).toBe(10);
@@ -65,14 +59,14 @@ describe('UC13: Review sales performance (Restaurant)', () => {
   });
 
   test('extension 2a: missing restaurantId -> 400 (orders.js:119)', async () => {
-    const res = await request(server).get('/api/orders/restaurant');
+    const res = await request(app).get('/api/orders/restaurant');
     expect(res.status).toBe(400);
   });
 
   test('extension 2b (documented cost): the endpoint returns the FULL raw order list — no server-side aggregation, pagination, or date filtering exists for the insights view', async () => {
     for (let i = 0; i < 60; i++) seedOrder(`order-${i}`, 'rest-1');
 
-    const res = await request(server).get('/api/orders/restaurant?restaurantId=rest-1');
+    const res = await request(app).get('/api/orders/restaurant?restaurantId=rest-1');
 
     // All 60 come back in one response; the browser does all aggregation
     // (client/src/components/restaurant/Insights.tsx:1-45), so payload size grows
