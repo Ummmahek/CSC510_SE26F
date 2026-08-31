@@ -1,0 +1,32 @@
+FAIL tests/uc7-track-order.test.js
+  UC7: Track my order (Customer)
+    ✓ main success scenario: GET /customer lists this customer's orders, each with its current status (orders.js:83-105) (26 ms)
+    ✓ the list is scoped to the requesting customer (orders.js:93-95) (19 ms)
+    ✓ extension 2a: missing customerId -> 400 (orders.js:88-89) (1 ms)
+    ✓ a customer with no orders gets 200 and an empty list, not an error (orders.js:93-105) (18 ms)
+    ✓ STAR FINDING: moving an order to "confirmed" records no confirmedAt; moving it to "preparing" is what stamps it (orders.js:202) (76 ms)
+    ✓ FINDING: GET /:id returns fabricated mock data regardless of the id or the real order (orders.js:157-180) (2 ms)
+    ✓ FINDING: an order jumps straight from pending to delivered, and the tracked timeline has no confirmedAt/readyAt (orders.js:184, 202) (34 ms)
+    ✕ [DOC EXPECTATION] GET /:id must return the real order for that id (EXPECTED TO FAIL -- see FINDING above) (2 ms)
+
+  ● UC7: Track my order (Customer) › [DOC EXPECTATION] GET /:id must return the real order for that id (EXPECTED TO FAIL -- see FINDING above)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "cust-7"
+    Received: "customer123"
+
+      138 |
+      139 |     const res = await request(server).get('/api/orders/real-7');
+    > 140 |     expect(res.body.order.customerId).toBe('cust-7');
+          |                                       ^
+      141 |     expect(res.body.order.status).toBe('delivered');
+      142 |   });
+      143 | });
+
+      at Object.toBe (tests/uc7-track-order.test.js:140:39)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 7 passed, 8 total
+Snapshots:   0 total
+Time:        0.527 s, estimated 1 s
