@@ -195,6 +195,20 @@ the tables below.
 Models: Claude (Claude Code) / Gemini CLI / Codex (app) /
 (optional local 4th — Ollama; if absent, one honest sentence why).
 
+## Keeper rationale (which prompts earned their keep — rubric asks for one line each)
+
+| # | Kept because / dropped because |
+|---|---|
+| KP1 | |
+| KP2 | |
+| KP3 | |
+| KP4 | |
+| KP5 | |
+| KP6 | |
+| KP7 | |
+| KP8 | |
+| *(dropped experiments)* | |
+
 ## Prompt × model table (step 8)
 
 | Keeper | Claude | Gemini | Codex | Local | Disagreement? Which model we believed, and what evidence settled it |

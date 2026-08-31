@@ -144,18 +144,18 @@ Tests:       11 passed, 11 total
 Command run: `npx jest tests/uc10-redeem-points.test.js --no-coverage --verbose`
 
 ```
-UC10: Redeem points for a discount (Customer)
-    √ main success scenario: redeem points at 1 point = $0.01, balance deducted and redemption logged (points.js:68-140) (110 ms)
-    √ extension 2a: points < 1 or non-integer -> 400 (points.js:69) (16 ms)
-    √ extension 3a: insufficient balance -> 400 with available vs. requested points (points.js:92-97) (30 ms)
-    √ extension 3b: no points record for the customer -> 404 (points.js:85-88) (31 ms)
-    √ STAR FINDING: concurrent redemptions double-spend a balance that should only cover ONE of them (points.js:82-127, no transaction around read-then-update) (77 ms)
-    √ POST /calculate-discount previews the discount WITHOUT deducting any points (points.js:142-186) (63 ms)
-    √ POST /calculate-discount: insufficient balance -> 400, same guard as /use (points.js:166-172) (33 ms)
-    √ POST /calculate-discount: no points record -> 404 (points.js:159-161) (30 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       8 passed, 8 total
+FAIL tests/uc10-redeem-points.test.js
+    √ main success scenario: redeem points at 1 point = $0.01, balance deducted and redemption logged (points.js:68-140) (80 ms)
+    √ extension 2a: points < 1 or non-integer -> 400 (points.js:69) (8 ms)
+    √ extension 3a: insufficient balance -> 400 with available vs. requested points (points.js:92-97) (19 ms)
+    √ extension 3b: no points record for the customer -> 404 (points.js:85-88) (19 ms)
+    √ STAR FINDING: concurrent redemptions double-spend a balance that should only cover ONE of them (points.js:82-127, no transaction around read-then-update) (50 ms)
+    √ POST /calculate-discount previews the discount WITHOUT deducting any points (points.js:142-186) (37 ms)
+    √ POST /calculate-discount: insufficient balance -> 400, same guard as /use (points.js:166-172) (19 ms)
+    √ POST /calculate-discount: no points record -> 404 (points.js:159-161) (19 ms)
+    × [DOC EXPECTATION] concurrent redemptions must not exceed the available balance (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior) (38 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 8 passed, 9 total
 ```
 
 Command run: `npx jest tests/uc11-voice-control.test.js --no-coverage --verbose`
@@ -190,18 +190,17 @@ Tests:       4 passed, 4 total
 Command run: `npx jest tests/uc14-manage-menu.test.js --no-coverage --verbose`
 
 ```
-PASS tests/uc14-manage-menu.test.js
-  UC14: Manage the menu (Restaurant)
-    √ main success scenario: restaurant adds/edits menu items and customers see the update (restaurant.js: GET/PUT /menu) (141 ms)
-    √ extension 1a: missing ownerId on GET /menu -> 400 (restaurant.js:83) (4 ms)
-    √ extension 3a: PUT /menu with an invalid body fails express-validator -> 400 (restaurant.js:116) (6 ms)
-    √ extension 3b: PUT /menu for an ownerId with no matching restaurant user -> 404 (restaurant.js:131) (33 ms)
-    √ MISMATCH vs usecases.md 3c: PUT /profile for a restaurant with NO existing restaurant record does not "silently create" one -- it 500s (restaurant.js:51, Restaurant.findByOwnerId is undefined) (47 ms)
-    √ follow-up: the same PUT /profile crash also happens when a Restaurant record already exists -- proving the endpoint is unconditionally broken, not just the "no prior restaurant" edge case (32 ms)
-    √ BONUS FINDING: GET /profile is a stub -- always returns { user: null, restaurant: null } regardless of the caller (restaurant.js:8-20) (8 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       7 passed, 7 total
+FAIL tests/uc14-manage-menu.test.js
+    √ main success scenario: restaurant adds/edits menu items and customers see the update (restaurant.js: GET/PUT /menu) (96 ms)
+    √ extension 1a: missing ownerId on GET /menu -> 400 (restaurant.js:83) (2 ms)
+    √ extension 3a: PUT /menu with an invalid body fails express-validator -> 400 (restaurant.js:116) (3 ms)
+    √ extension 3b: PUT /menu for an ownerId with no matching restaurant user -> 404 (restaurant.js:131) (20 ms)
+    √ MISMATCH vs usecases.md 3c: PUT /profile for a restaurant with NO existing restaurant record does not "silently create" one -- it 500s (restaurant.js:51, Restaurant.findByOwnerId is undefined) (29 ms)
+    √ follow-up: the same PUT /profile crash also happens when a Restaurant record already exists -- proving the endpoint is unconditionally broken, not just the "no prior restaurant" edge case (20 ms)
+    √ BONUS FINDING: GET /profile is a stub -- always returns { user: null, restaurant: null } regardless of the caller (restaurant.js:8-20) (5 ms)
+    × [DOC EXPECTATION] usecases.md 3c: PUT /profile should silently create a restaurant when none exists (EXPECTED TO FAIL -- see MISMATCH test above for the real behavior) (20 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 7 passed, 8 total
 ```
 
 Command run: `npx jest tests/uc15-claim-delivery.test.js --no-coverage --verbose`
@@ -229,28 +228,20 @@ Tests:       9 passed, 9 total
 Command run: `npx jest tests/uc16-pickup-deliver.test.js --no-coverage --verbose`
 
 ```
-console.error
-    Deliver order error: TypeError: rider.updateDeliveryStatus is not a function
-        at updateDeliveryStatus (proj2/server/routes/delivery.js:278:21)
-
-PASS tests/uc16-pickup-deliver.test.js
-  UC16: Pick up and deliver an order (Delivery partner)
-    √ extension 1a: pickup never checks the order exists -- updates blind, and on a NONEXISTENT order that surfaces as an uncontrolled 500, not a clean 404 (delivery.js:204-209) (113 ms)
-    √ extension 1a (continued): pickup also blindly overwrites status on an order that exists but is NOT in a pickup-appropriate state (56 ms)
-    √ extension 2a: order not found at delivery -> 404 (delivery.js:234-236) (29 ms)
-    √ STAR FINDING (clean case): Partner B, never assigned, completes Partner A's delivery and is credited -- Partner A gets nothing (delivery.js:223-268) (473 ms)
-    √ UNRELATED BUG: completing a delivery for a rider with no other active order 500s AFTER already recording the delivery and paying out (delivery.js:278, User.updateDeliveryStatus is undefined) (351 ms)
-    √ STAR FINDING (common case, response is 500 due to the unrelated bug above, but the state corruption still fully lands) (370 ms)
-    √ note (time-permitting): an unreasonably large deliveryFee/tipAmount is accepted and paid out with no upper bound (delivery.js:244) (338 ms)
-    √ GET /orders (a rider reviewing their assignments) includes a computed earning field (delivery.js:37-85) (158 ms)
-    √ GET /orders requires a riderId -> 400 (delivery.js:42-44) (4 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       9 passed, 9 total
+FAIL tests/uc16-pickup-deliver.test.js
+    √ extension 1a: pickup never checks the order exists -- updates blind, and on a NONEXISTENT order that surfaces as an uncontrolled 500, not a clean 404 (delivery.js:204-209) (65 ms)
+    √ extension 1a (continued): pickup also blindly overwrites status on an order that exists but is NOT in a pickup-appropriate state (36 ms)
+    √ extension 2a: order not found at delivery -> 404 (delivery.js:234-236) (18 ms)
+    √ STAR FINDING (clean case): Partner B, never assigned, completes Partner A's delivery and is credited -- Partner A gets nothing (delivery.js:223-268) (337 ms)
+    √ UNRELATED BUG: completing a delivery for a rider with no other active order 500s AFTER already recording the delivery and paying out (delivery.js:278, User.updateDeliveryStatus is undefined) (264 ms)
+    √ STAR FINDING (common case, response is 500 due to the unrelated bug above, but the state corruption still fully lands) (290 ms)
+    √ note (time-permitting): an unreasonably large deliveryFee/tipAmount is accepted and paid out with no upper bound (delivery.js:244) (249 ms)
+    √ GET /orders (a rider reviewing their assignments) includes a computed earning field (delivery.js:37-85) (94 ms)
+    √ GET /orders requires a riderId -> 400 (delivery.js:42-44) (3 ms)
+    × [DOC EXPECTATION] only the assigned delivery partner should be able to complete an order and be paid (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior) (245 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 9 passed, 10 total
 ```
-
-**Combined total: 41 / 41 passing** across all 5 files
-(`npx jest tests/uc*.test.js --no-coverage`, ~3.5s).
 
 Command run: `npx jest tests/uc17-delivery-map.test.js --no-coverage --verbose`
 
