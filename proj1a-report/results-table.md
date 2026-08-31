@@ -42,3 +42,26 @@ Failures are findings: explain them, never hide them.
 | UC16 new: GET /orders earning field | Untested by the doc | Computed `earning` = deliveryFee + tipAmount | PASS |
 
 Environment note: Firestore is mocked (`proj2/tests/helpers/fakeFirestore.js`), not the real emulator — Docker/gcloud/firebase-cli weren't available on this machine. If someone on the team has the real emulator running (per D1's note that it worked in Docker), it'd be worth re-running these against it to double check, especially the two concurrency findings.
+
+## UC8, UC11, UC13, UC17, UC18 (see `proj2/tests/uc8-rate-order.test.js`, `uc11-voice-control.test.js`, `uc13-sales-insights.test.js`, `uc17-delivery-map.test.js`, `uc18-delivery-earnings.test.js` — 35 tests, 34 pass + 1 intentional failure, `npx jest tests/uc8-rate-order.test.js tests/uc11-voice-control.test.js tests/uc13-sales-insights.test.js tests/uc17-delivery-map.test.js tests/uc18-delivery-earnings.test.js --no-coverage --verbose` from `proj2/`)
+
+| Test | Why we tried it | Expected | What happened |
+|---|---|---|---|
+| UC8 main + optional review | Happy path (`orders.js:245-303`) | 200, rating stored once | PASS |
+| UC8 ext 1a: rating 0 / 6 / 3.5 / "four" | Doc'd validator (`orders.js:246`) | 400 each | PASS |
+| UC8 ext 2a/2b/2c/2d: missing order / wrong customer / undelivered / already rated | Doc'd guards (`orders.js:262-278`) | 404 / 403 / 400 / 400 | PASS — and the first rating survives a second attempt |
+| UC8 ext 3a: no stored average updated | Doc says averages are derived at read time (`customer.js:97-122`) | Restaurant doc byte-identical before/after rating | PASS (finding confirmed) |
+| UC11 main + trim | Happy path (`voice.js:31-77`) | 200 with one of the 5 action ids | PASS (Gemini mocked) |
+| UC11 ext 1a/2a/2b: bad input / no API key / unparseable reply | Doc'd guards (`voice.js:35-42,71-75`) | 400 / 500 / 422 | PASS |
+| UC11 ext 2c: upstream Gemini HTTP error | Error handler (`voice.js:83-87`) | Upstream status passed through | PASS — a Gemini 429 surfaces as our 429 |
+| UC11 [DOC EXPECTATION]: voice can order food | The feature's own name promises ordering | 200 with an ordering action | **FAIL on purpose** — the action list is 5 navigation commands (`voice.js:6-12`); a food-ordering app's voice feature cannot order food |
+| UC13 main: only own orders returned | Happy path (`orders.js:113-142`) | 2 of 3 seeded orders | PASS |
+| UC13 data contract for client charts | Insights.tsx aggregates client-side | totalAmount/status/parseable dates | PASS |
+| UC13 ext 2a: missing restaurantId | Doc'd guard (`orders.js:119`) | 400 | PASS |
+| UC13 ext 2b: full raw list, no pagination | Doc'd scalability cost | All 60 seeded orders in one response | PASS (finding confirmed) |
+| UC17 source inspection (6 tests) | Client runner broken; assert the fabricated-courier finding on source | Sole consumer is the customer page (whole-src scan); visible "Delivery Simulation" heading; interpolated marker; hardcoded 20 steps x 1000 ms; "Start Delivery" button; props contract admits no real position source | PASS (all findings confirmed in source) |
+| UC18 main: GET /orders earning field | Happy path (`delivery.js:58-61`) | earning = deliveryFee + tipAmount | PASS |
+| UC18: missing riderId | Doc'd guard (`delivery.js:42-44`) | 400 | PASS |
+| UC18: non-numeric fee/tip | Coercion (`delivery.js:58-60`) | 0, not NaN | PASS |
+| UC18: totalEarnings accumulates | Server ledger (`User.js:153-166`) | 5 + 5 = 10 after two deliveries | PASS (rider kept "busy" to dodge the known `updateDeliveryStatus` 500) |
+| UC18 two-ledgers finding | totalEarnings written but never served | Response shape is orders-only; no order carries totalEarnings, each carries per-order earning | PASS (finding confirmed) |

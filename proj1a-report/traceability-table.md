@@ -14,11 +14,18 @@ explained, not hidden.
 | `proj2/tests/uc10-redeem-points.test.js` (8 tests) | UC10 | Main flow + all documented guards; confirms concurrent double-spend (star finding, see results table for exact behavior vs. prediction); new: POST /calculate-discount covered |
 | `proj2/tests/uc15-claim-delivery.test.js` (9 tests) | UC15 | Main flow + all documented extensions; confirms claim race (both requests get 200, not one-409); new finding: POST /reject has no ownership check either |
 | `proj2/tests/uc16-pickup-deliver.test.js` (9 tests) | UC16 | Main flow extensions + headline finding: wrong-partner delivery theft, fully reproduced with before/after earnings; new finding: `User.updateDeliveryStatus` undefined crashes the common case |
+| `proj2/tests/uc8-rate-order.test.js` (11 tests) | UC8 | All five documented guards hold; rating is immutable once set; no stored average exists (derived at read time) |
+| `proj2/tests/uc11-voice-control.test.js` (9 tests) | UC11 | All guards hold with Gemini mocked; upstream errors pass through; the headline gap (no ordering action) pinned by an intentional red test |
+| `proj2/tests/uc13-sales-insights.test.js` (4 tests) | UC13 | Server returns exactly the restaurant's raw orders with the fields the browser aggregation needs; no server-side aggregation/pagination exists |
+| `proj2/tests/uc17-delivery-map.test.js` (6 tests) | UC17 | The customer-facing "tracking" map is a hardcoded 20-step/1s-tick simulation with no real position source (source-inspection; client runner broken as inherited) |
+| `proj2/tests/uc18-delivery-earnings.test.js` (5 tests) | UC18 | Displayed earnings are computed per-order; the server's totalEarnings ledger is write-only and can diverge silently |
 
 ### Orphans — use cases with no test (explain each)
 
-- *(example)* UC-voice-ordering: no test — requires a Gemini API key we do
-  not have; gap acknowledged.
+- UC1–UC7, UC9, UC12, UC19: not yet written — assigned to the other two
+  members per the team split; must be closed (or explained) before submission.
+- (The earlier "voice ordering needs a Gemini key" gap is resolved: UC11 is
+  now tested with the Gemini HTTP call mocked.)
 
 ### Orphans — tests mapped to no use case
 
