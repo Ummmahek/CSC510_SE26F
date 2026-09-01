@@ -1,8 +1,19 @@
 # Keeper Prompts — Cross-Model Comparison
 
 Run each prompt **verbatim** in all three LLMs (Claude Code, Gemini CLI,
-Copilot/Codex) inside the `proj2` repo directory. Same wording across all
-three is what makes the prompt × model comparison table valid for D5/step 8.
+Codex app — plus the optional local 4th) inside the `proj2` repo directory.
+Same wording across all models is what makes the prompt × model comparison
+table valid for D5/step 8.
+
+How these prompts map to the brief: KP1-KP2 cover step 1's first-contact /
+code-rot survey; KP3 is the brief's build-triage starter grounded in our real
+fresh-clone failure; KP4 runs step 2 (reverse-engineering a use case) on the
+feature the models are most likely to disagree about; KP5 runs step 7
+(judge the existing tests); KP6-KP7 run steps 3-4 (write a test, close a
+gap); KP8 is our own addition with no starter equivalent. They adapt the
+ten starters rather than copy them: each pins an output format, demands
+file:line citations, forbids guessing with an explicit UNVERIFIED escape
+hatch, and (KP3) embeds real captured evidence instead of a placeholder.
 
 ---
 

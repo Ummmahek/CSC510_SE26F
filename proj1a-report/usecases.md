@@ -22,7 +22,7 @@ caller sends. We cite it once here instead of repeating it in all 20 UCs.
 | **Preconditions** | None (public endpoint). |
 | **Trigger** | User submits the signup form. |
 | **Main success scenario** | 1. User picks a role and fills the role-specific profile. 2. User provides a delivery address. 3. System validates the input. 4. System creates the account. 5. User is taken to their role's dashboard. |
-| **Extensions** | 2a: Address is picked on a map; the reverse-geocode lookup needs a Google Maps key and throws without one (`client/src/pages/SignupPage.tsx:43–50`). 3a: Invalid email / password under 6 chars / unknown role → rejected (`routes/auth.js:8–11`). 3b: Email already registered → refused (`auth.js:23–26`). 4a: **Not handled** — password stored in plain text; the code itself admits it ("In production, hash this password", `auth.js:31`). |
+| **Extensions** | 2a: Address is picked on a map; the reverse-geocode lookup needs a Google Maps key and throws without one (`client/src/pages/SignupPage.tsx:43–50`). *(Testing refined this: the SERVER-side geocode, by contrast, swallows failures — signup returns 201 with `location: null`, `models/User.js:41-45`; see the D3 UC1 rows.)* 3a: Invalid email / password under 6 chars / unknown role → rejected (`routes/auth.js:8–11`). 3b: Email already registered → refused (`auth.js:23–26`). 4a: **Not handled** — password stored in plain text; the code itself admits it ("In production, hash this password", `auth.js:31`). |
 | **Postconditions** | Account exists with role and profile; user can log in. |
 
 ## UC2: Log in
@@ -191,7 +191,7 @@ caller sends. We cite it once here instead of repeating it in all 20 UCs.
 | **Preconditions** | Restaurant account exists. |
 | **Trigger** | Restaurant edits its menu. |
 | **Main success scenario** | 1. Restaurant opens menu management. 2. Restaurant adds/edits items (name, price, availability). 3. System validates and saves. 4. Customers see the updated menu. |
-| **Extensions** | 1a: Missing ownerId → 400 (`routes/restaurant.js:83`). 3a: Validation failure → 400 (`restaurant.js:116`). 3b: Restaurant/menu not found → 404 (`restaurant.js:131`). 3c: The profile endpoint silently **creates** the restaurant record if none exists (`restaurant.js:58`) — onboarding and editing share one code path. |
+| **Extensions** | 1a: Missing ownerId → 400 (`routes/restaurant.js:83`). 3a: Validation failure → 400 (`restaurant.js:116`). 3b: Restaurant/menu not found → 404 (`restaurant.js:131`). 3c: The profile endpoint silently **creates** the restaurant record if none exists (`restaurant.js:58`) — onboarding and editing share one code path. *(Testing disproved this: `Restaurant.findByOwnerId` at `restaurant.js:51` is undefined, so every PUT /profile call 500s before the create path can run — the endpoint is unconditionally broken; see the D3 UC14 rows.)* |
 | **Postconditions** | Menu as stored matches what the restaurant intends to sell. |
 
 ## UC15: Claim a delivery job
@@ -269,5 +269,5 @@ caller sends. We cite it once here instead of repeating it in all 20 UCs.
 | **Preconditions** | Orders have been delivered. |
 | **Trigger** | Customer views the donation counter. |
 | **Main success scenario** | 1. Customer opens the donation counter. 2. System computes meals donated as one meal per ten delivered orders (`⌊delivered/10⌋`). 3. Customer sees the count. |
-| **Extensions** | 2a: The rule lives at `routes/donations.js:15`, but a separate endpoint lets **any unauthenticated caller inflate the stored counter without bound** (`donations.js:59` increments; `donations.js:47` only rejects zero/negative amounts), permanently desynchronizing it from the derived value. |
-| **Postconditions** | Displayed count matches the recorded (possibly tampered) counter. |
+| **Extensions** | 2a: The rule lives at `routes/donations.js:15`, but a separate endpoint lets **any unauthenticated caller inflate the stored counter without bound** (`donations.js:59` increments; `donations.js:47` only rejects zero/negative amounts), permanently desynchronizing it from the derived value. *(Testing refined this: the tampering is fully reproducible, but `GET /stats` recomputes ⌊delivered/10⌋ fresh and never reads the tampered field back — so the write-side hole exists while its displayed consequence does not, yet; see the D3 UC20 rows.)* |
+| **Postconditions** | Displayed count matches the freshly derived ⌊delivered/10⌋ value; the separately stored (tamperable) counter is not what the display reads. |

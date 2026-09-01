@@ -198,7 +198,27 @@ illustration of the blindness: ~20 passing-by-name tests encode an order
 state machine that `orders.js` simply does not have — which is exactly how
 UC7's "jump straight to delivered" defect survived.
 
-TODO: extend the name-mapping above to the remaining 15 UCs (e.g.
-`calculatePointsForOrder(100) === 10` encodes the README's 10% rate — the
-UC9 docs/code conflict — and `calculateTax`/`isValidDiscountCode` specify
-features that were never built).
+### …and the remaining 15 UCs (same method, by test name)
+
+| UC | Nearest own-test coverage (by name) | Blind to |
+|---|---|---|
+| **UC2** | `validateEmail` | The `/login` route: the plain-text comparison, the absence of any session/token |
+| **UC6** | `calculateOrderTotal`, `isValidOrder`, `canPlaceOrder`, `calculateTax`, `calculateTipAmount`, `formatOrderId` — checkout math on hypothetical helpers (`calculateTax` was never built) | `POST /orders` itself: presence-only validation, negative totals accepted, the silent multi-restaurant split |
+| **UC8** | `isValidRating` | The rate route's five guards, rating immutability, read-time-derived averages |
+| **UC9** | `calculatePointsForOrder` — and its assertions encode the README's 10% rate (`calculatePointsForOrder(100) === 10`), i.e. the suite specifies the **documented** earn rate the shipped code contradicts (1 pt/$, `points.js:195`) | `awardPointsForOrder`, the delivery trigger, the 50-entry transaction cap |
+| **UC10** | `calculateDiscountFromPoints`, `canUsePoints`, `calculateMaxDiscount`, `isValidDiscountCode` (discount codes were never built) | `POST /use`: the balance guard, the concurrency double-spend, the audit-log overwrite |
+| **UC11** | — none | The entire voice feature |
+| **UC12** | `isValidStatusTransition` (~20 tests), `canManageOrders` — encode a full order state machine | `orders.js` ships no transition rules at all — the exact gap UC7/UC12 tests exposed |
+| **UC13** | `formatCurrency` at best | `GET /orders/restaurant`, the client-side aggregation, the no-pagination cost |
+| **UC14** | — none | The whole menu/profile surface, including the unconditionally-broken PUT /profile |
+| **UC15** | `getDefaultDeliveryStatus` | Accept/reject routes, the claim race, the /reject ownership hole |
+| **UC16** | `isValidStatusTransition` (again — hypothetically), `calculateDeliveryFee`, `calculateTipAmount` | Pickup/deliver routes: the delivery theft, the post-payout crash, unbounded payout |
+| **UC17** | `calculateDeliveryTime`, `calculateEstimatedDeliveryTime` — ETA math that never shipped | The fabricated map simulation |
+| **UC18** | `calculateDeliveryFee`, `calculateTipAmount` | The computed earning field, the write-only totalEarnings ledger |
+| **UC19** | — none | Badge rules live in `src/badges/`, untouched by the suite |
+| **UC20** | — none | The donation counter, its derivation rule, and the unauthenticated inflation hole |
+
+The pattern of the first table holds across all 20: the inherited suite
+specifies helper-level math (sometimes for features that never shipped, and
+in UC9's case for the documented behavior the shipped code contradicts) and
+is blind to every route, screen, and state transition our tests exercised.
