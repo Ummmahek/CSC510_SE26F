@@ -1,0 +1,59 @@
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+FAIL tests/uc1-signup-role.test.js
+  UC1: Sign up with a role (New user)
+    ✓ main success scenario: a valid role + profile creates the account and returns a safe payload (auth.js:8-39) (48 ms)
+    ✓ postcondition "user can log in": the just-registered credentials authenticate via POST /login (auth.js:47-74) (51 ms)
+    ✓ extension 3a: invalid email, password < 6 chars, and an unknown role are each rejected -> 400 (auth.js:9-11) (3 ms)
+    ✓ extension 3b: an email that is already registered is refused -> 400 (auth.js:23-26) (49 ms)
+    ✓ BONUS FINDING: a geocoding failure is swallowed -- registration still succeeds with location: null (models/User.js:46-49, 67-69) (34 ms)
+    ✓ BONUS FINDING: the "role-specific profile" from step 1 is never validated -- an empty profile object is accepted (auth.js:12) (33 ms)
+    ✓ STAR FINDING: the password is persisted in plaintext (auth.js:29-34, 31) (49 ms)
+    ✕ [DOC EXPECTATION] the stored password must be hashed, not equal to the submitted value (EXPECTED TO FAIL -- see STAR FINDING above) (51 ms)
+
+  ● UC1: Sign up with a role (New user) › [DOC EXPECTATION] the stored password must be hashed, not equal to the submitted value (EXPECTED TO FAIL -- see STAR FINDING above)
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "supersecret"
+
+      139 |
+      140 |     const snap = await db.collection('users').where('email', '==', 'newcustomer@example.com').get();
+    > 141 |     expect(snap.docs[0].data().password).not.toBe('supersecret');
+          |                                              ^
+      142 |   });
+      143 | });
+      144 |
+
+      at Object.toBe (tests/uc1-signup-role.test.js:141:46)
+
+FAIL tests/uc3-manage-profile.test.js
+  UC3: Manage profile (Any logged-in user)
+    ✓ main success scenario: a valid profile edit saves and is visible on the next read (customer.js:40-77, 9-37) (56 ms)
+    ✓ auth guards: a wrong password and a non-customer role are each rejected -> 401 (customer.js:25, 60) (33 ms)
+    ✓ STAR FINDING: changing the address keeps the stale coordinates when geocoding fails (models/User.js:119-124) (33 ms)
+    ✓ FINDING: editing one profile field wipes the rest -- update({ profile }) replaces the whole map (customer.js:66) (33 ms)
+    ✓ FINDING: contract divergence -- profile.phone is type-checked on PUT /api/customer/profile but not on PUT /api/auth/profile (customer.js:45-48 vs auth.js:109-112) (35 ms)
+    ✓ FINDING: contract divergence -- PUT /api/auth/profile never checks role, PUT /api/customer/profile does (auth.js:123 vs customer.js:60) (53 ms)
+    ✕ [DOC EXPECTATION] an address change must refresh (or reject), never silently keep old coordinates (EXPECTED TO FAIL -- see STAR FINDING above) (38 ms)
+
+  ● UC3: Manage profile (Any logged-in user) › [DOC EXPECTATION] an address change must refresh (or reject), never silently keep old coordinates (EXPECTED TO FAIL -- see STAR FINDING above)
+
+    expect(received).not.toEqual(expected) // deep equality
+
+    Expected: not {"latitude": 35.7796, "longitude": -78.6382}
+
+      195 |       .send({ email: 'cust1@example.com', password: 'pw', profile: { address: NEW_ADDRESS } });
+      196 |
+    > 197 |     expect(put.body.customer.location).not.toEqual(OLD_COORDS);
+          |                                            ^
+      198 |   });
+      199 | });
+      200 |
+
+      at Object.toEqual (tests/uc3-manage-profile.test.js:197:44)
+
+Test Suites: 2 failed, 2 total
+Tests:       2 failed, 13 passed, 15 total
+Snapshots:   0 total
+Time:        1.035 s
+Ran all test suites matching /tests\/uc1-signup-role.test.js|tests\/uc3-manage-profile.test.js/i.

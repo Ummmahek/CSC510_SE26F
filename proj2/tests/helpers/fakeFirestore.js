@@ -188,8 +188,19 @@ class FakeQuery {
         ref: new FakeDocRef(store, collectionName, id),
       };
     });
-    return { empty: docs.length === 0, size: docs.length, docs };
+    return makeSnapshot(docs);
   }
+}
+
+// A QuerySnapshot exposes .docs, .empty, .size AND .forEach(cb) in real Firestore; several
+// routes (e.g. customer.js rating aggregation) use .forEach rather than .docs.map.
+function makeSnapshot(docs) {
+  return {
+    empty: docs.length === 0,
+    size: docs.length,
+    docs,
+    forEach: (cb, thisArg) => docs.forEach(cb, thisArg),
+  };
 }
 
 class FakeLimitedQuery {
@@ -200,8 +211,7 @@ class FakeLimitedQuery {
 
   async get() {
     const snap = await this._query.get();
-    const docs = snap.docs.slice(0, this._n);
-    return { empty: docs.length === 0, size: docs.length, docs };
+    return makeSnapshot(snap.docs.slice(0, this._n));
   }
 }
 
