@@ -182,3 +182,55 @@ Rules:
 - Flag anything you're inferring versus anything you can point to
   directly.
 ```
+
+---
+
+# Results (D5)
+
+Workflow: experiment freely → promote prompts that worked to **keepers** (the
+8 above) → run every keeper, verbatim, on every model → record outputs under
+`model-outputs/` (transcripts or screenshots — claims alone score zero) → fill
+the tables below.
+
+Models: Claude (Claude Code) / Gemini CLI / Codex (app) /
+(optional local 4th — Ollama; if absent, one honest sentence why).
+
+## Keeper rationale (which prompts earned their keep — rubric asks for one line each)
+
+| # | Kept because / dropped because |
+|---|---|
+| KP1 | |
+| KP2 | |
+| KP3 | |
+| KP4 | |
+| KP5 | |
+| KP6 | |
+| KP7 | |
+| KP8 | |
+| *(dropped experiments)* | |
+
+## Prompt × model table (step 8)
+
+| Keeper | Claude | Gemini | Codex | Local | Disagreement? Which model we believed, and what evidence settled it |
+|---|---|---|---|---|---|
+| KP1 | | | | | |
+| KP2 | | | | | |
+| KP3 | | | | | |
+| KP4 | | | | | |
+| KP5 | | | | | |
+| KP6 | | | | | |
+| KP7 | | | | | |
+| KP8 | | | | | |
+
+## Caught errors (zero caught errors reads as zero checking)
+
+| Model | Wrong output (what it claimed) | How we caught it (evidence) |
+|---|---|---|
+| | | |
+
+## Per-model strengths/weaknesses on THIS repo
+
+- Claude:
+- Gemini:
+- Codex:
+- Local model result (or one sentence on why none ran):

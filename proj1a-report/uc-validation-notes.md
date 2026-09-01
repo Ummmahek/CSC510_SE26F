@@ -1,105 +1,206 @@
-# Project 1A: Use-case validation notes (UC10, UC14, UC15, UC16, UC20)
+# Project 1A: Use-case validation notes
+
+Method notes, environment assumptions, findings, and raw output samples for
+every use-case test suite written so far (UC8, 10, 11, 13, 14, 15, 16, 17, 18,
+20 — ordered by UC number throughout). The per-test rows live in the shared
+`results-table.md` and `traceability-table.md`; this file is the methodology
+behind them.
 
 ## Code link
 
-- Test implementation: `proj2/tests/uc10-redeem-points.test.js`,
+- Tests: `proj2/tests/uc8-rate-order.test.js`, `uc10-redeem-points.test.js`,
+  `uc11-voice-control.test.js`, `uc13-sales-insights.test.js`,
   `uc14-manage-menu.test.js`, `uc15-claim-delivery.test.js`,
-  `uc16-pickup-deliver.test.js`, `uc20-donation-impact.test.js`
-  (shared helpers in `proj2/tests/helpers/`)
+  `uc16-pickup-deliver.test.js`, `uc17-delivery-map.test.js`,
+  `uc18-delivery-earnings.test.js`, `uc20-donation-impact.test.js`
+- Shared helpers: `proj2/tests/helpers/` (`fakeFirestore.js`, `buildApp.js`,
+  `deliveryFixtures.js`)
 - Use-case source: `proj1a-report/usecases.md`
-- Existing project test suite: `proj2/tests/example.test.js`
 
 ## How to run
 
-From `proj2/`:
+From `proj2/` (after `npm install` at root and in `server/`):
 
 ```bash
-npm install
-cd server && npm install && cd ..
-npx jest tests/uc10-redeem-points.test.js tests/uc14-manage-menu.test.js tests/uc15-claim-delivery.test.js tests/uc16-pickup-deliver.test.js tests/uc20-donation-impact.test.js --no-coverage --verbose
+npx jest tests/uc8-rate-order.test.js tests/uc10-redeem-points.test.js tests/uc11-voice-control.test.js tests/uc13-sales-insights.test.js tests/uc14-manage-menu.test.js tests/uc15-claim-delivery.test.js tests/uc16-pickup-deliver.test.js tests/uc17-delivery-map.test.js tests/uc18-delivery-earnings.test.js tests/uc20-donation-impact.test.js --no-coverage --verbose
 ```
 
-Or one use case at a time, e.g. `npx jest tests/uc16-pickup-deliver.test.js --no-coverage --verbose`.
-
-**Environment note:** Firestore is mocked (`proj2/tests/helpers/fakeFirestore.js`), not
-the real Firebase emulator — Docker, `gcloud` and the `firebase` CLI were not available
-in this environment, so no local run against the real emulator was possible. The mock
-mirrors real Firestore's behavior where it matters for these tests (e.g. `update()` on a
-missing document rejects; reads/writes resolve asynchronously so genuine races can
-happen), but it is a simulation, not a validated substitute for the emulator. If someone
-on the team gets the real emulator running (per `d1-product-choice.md`, it worked in
-Docker at least once), it would be worth re-running these against it, especially the two
-concurrency tests below.
-
-**Note on PASS/FAIL style, vs. the example table in the assignment brief:** most tests here
-assert the *actual observed* behavior directly (so they pass), calling out every place that
-diverges from `usecases.md` in the assertions' own comments and in the tables below. For the
-3 headline findings, there is now also a companion test asserting what the *doc* promises
-instead — these are meant to fail, on purpose, so the demo video has real red output to show,
-not just a passing test's comments:
+Expected: **79 tests — 75 pass, 4 intentional failures.** Tests titled
+`[DOC EXPECTATION]` assert what the documentation promises instead of what the
+code does; they are meant to stay red for the demo video:
 
 | Test (marked `[DOC EXPECTATION]`) | File | Fails with |
 |---|---|---|
 | Concurrent redemptions must not exceed the available balance | `uc10-redeem-points.test.js` | `Expected: 1, Received: 2` |
+| A food-ordering app's voice feature should be able to order food | `uc11-voice-control.test.js` | `Expected: 200, Received: 422` |
 | PUT /profile should silently create a restaurant when none exists | `uc14-manage-menu.test.js` | `Expected: 200, Received: 500` |
 | Only the assigned delivery partner should be able to complete an order and be paid | `uc16-pickup-deliver.test.js` | `riderBDoc.data().totalEarnings` expected `0`, received `5` |
 
-Running all 5 files together now reports **3 failed, 41 passed, 44 total** — a genuine
-red/green split, not a fully-green suite. The 3 failures are exactly the 3 headline findings;
-everything else stays green because it documents actual behavior directly.
+All other tests assert actual observed behavior directly, calling out every
+divergence from `usecases.md` in their own titles and in the shared tables.
 
-## Raw test output samples
+## Environment assumptions (stated, not hidden)
 
-Command run: `npx jest tests/uc14-manage-menu.test.js --no-coverage --verbose`
+- **Firestore is mocked** (`proj2/tests/helpers/fakeFirestore.js`), not the real
+  emulator — Docker/gcloud/firebase-cli weren't available on the machine that
+  wrote the first batch. The mock mirrors real Firestore where it matters
+  (update() on a missing doc rejects; reads/writes resolve asynchronously so
+  genuine races can happen), but it is a simulation. If someone gets the real
+  emulator running (per D1 it worked in Docker), the two concurrency findings
+  (UC10, UC15) are worth re-running against it.
+- **UC11 mocks the Gemini HTTP call** at the exact axios entry file the server
+  code resolves (`axios/dist/node/axios.cjs`). Two resolution traps documented
+  in the test header: a bare `jest.mock('axios')` fails loudly (axios only
+  exists in `server/node_modules`), while mocking the package *directory*
+  resolves to a different registry key, silently mocks nothing, and lets the
+  suite make REAL calls to Google.
+- **UC17 uses source-inspection tests**: the use case is client-only and the
+  inherited client test runner cannot load the app (react-router-dom v7 vs
+  CRA 5 Jest), so its tests assert the fabricated-courier finding against the
+  component source with cited lines instead of rendering it.
+
+## Findings and explanations (by use case)
+
+**UC10 — double-spend confirmed, with a specific mechanism worth spelling out.**
+`points.js:82-127` reads the points doc, computes the new balance/transaction in plain JS,
+then calls `update()` — no `db.runTransaction()`. Two concurrent redemption requests for 60
+points each on a 100-point balance both read `availablePoints: 100` before either writes,
+so both pass the balance check and both get HTTP 200. The stored balance settles at 40 (not
+negative) because both requests compute `100 - 60` independently from the same stale read
+— whichever `update()` lands last just overwrites the field with the same number, a
+lost-update, not a cumulative decrement. The `transactions` array is fully overwritten
+(not appended) on each write too, so only one of the two redemptions survives in the
+audit log even though both actually happened.
+
+**UC11 — the voice feature of a food-ordering app cannot order food.**
+The Gemini classifier's action list is five navigation commands (`voice.js:6-12`):
+logout, open profile, go home, open cart, total price. Nothing adds an item or
+places an order, so even a perfectly-behaving model cannot produce an ordering
+action — pinned by the intentional `[DOC EXPECTATION]` red test.
+
+**UC14 — PUT /profile is completely broken, not just the "silent creation" edge case.**
+`restaurant.js:51` calls `Restaurant.findByOwnerId(user.id)`, but that method is never
+defined anywhere on the `Restaurant` model (confirmed by grepping the whole repo). Calling
+it throws a `TypeError`, caught by the route's own `catch`, surfacing as a 500 — for every
+call, regardless of whether a restaurant record already exists. `usecases.md`'s claim that
+this path "silently creates" a restaurant does not hold.
+
+**UC15 — the same race exists in job-claiming, and a second, previously undocumented bug
+in /reject.** `delivery.js:100-146` (`POST /accept/:orderId`) has the identical
+read-check-write race as UC10. Separately, while adding coverage for `POST /reject/:orderId`
+(`delivery.js:164-191`), we found it never checks that the caller is the partner who
+actually claimed the order — an uninvolved rider can call `/reject` on someone else's
+claimed order and it succeeds, wiping out their legitimate claim.
+
+**UC16 — the headline finding, plus an unrelated crash discovered while testing it.**
+`delivery.js:223-268` (`POST /deliver/:orderId`) never compares the `riderId` in the
+request body against `orderData.deliveryPartnerId`. A completely uninvolved partner can
+mark someone else's order delivered and get credited the payout. Separately: `delivery.js:278`
+calls `rider.updateDeliveryStatus('free')`, a method never defined on `User` — this fires
+whenever the delivering rider has no other active order, which (per UC15's one-order-at-a-time
+rule) is the *normal* case. So most ordinary deliveries 500 at the very end, even though the
+order, points, and earnings have already been correctly persisted by that point.
+
+**UC17 — the "tracking" map is a fabricated simulation.**
+The courier marker is linearly interpolated from restaurant to customer over a
+hardcoded 20 steps × 1000 ms (`DeliveryMap.tsx:26-29, 84-105`), started by a
+"Start Delivery" button the customer presses themselves. The component's whole
+props contract is `{restaurant, customer, onDelivered?}` — no order, partner id,
+or live position can even reach it. The UI labels it "Delivery Simulation".
+
+**UC18 — two bookkeeping systems for the same money.**
+`POST /deliver` writes `totalEarnings` on the rider's user document
+(`User.js:153-166`), but no screen ever reads it back: `GET /orders` is built
+solely from order documents and the client recomputes earnings from the order
+list (`Insights.tsx:23-43`). The ledger is write-only and can diverge silently.
+
+**UC20 — the counter-inflation vulnerability is real, but doesn't (yet) reach the customer.**
+`donations.js:59` lets any unauthenticated caller add an arbitrary amount to the stored
+`counter` field, with only a zero/negative check. But `GET /stats` (the endpoint the
+customer-facing donation display actually calls) never reads that field into its
+response — it always recomputes `floor(deliveredOrders / 10)` fresh. So the write-side hole
+is fully exploitable, but its stated consequence ("displayed count matches the tampered
+counter") isn't currently true.
+
+## Raw test output samples (by use case)
+
+Command run: `npx jest tests/uc8-rate-order.test.js --no-coverage --verbose`
 
 ```
-PASS tests/uc14-manage-menu.test.js
-  UC14: Manage the menu (Restaurant)
-    √ main success scenario: restaurant adds/edits menu items and customers see the update (restaurant.js: GET/PUT /menu) (141 ms)
-    √ extension 1a: missing ownerId on GET /menu -> 400 (restaurant.js:83) (4 ms)
-    √ extension 3a: PUT /menu with an invalid body fails express-validator -> 400 (restaurant.js:116) (6 ms)
-    √ extension 3b: PUT /menu for an ownerId with no matching restaurant user -> 404 (restaurant.js:131) (33 ms)
-    √ MISMATCH vs usecases.md 3c: PUT /profile for a restaurant with NO existing restaurant record does not "silently create" one -- it 500s (restaurant.js:51, Restaurant.findByOwnerId is undefined) (47 ms)
-    √ follow-up: the same PUT /profile crash also happens when a Restaurant record already exists -- proving the endpoint is unconditionally broken, not just the "no prior restaurant" edge case (32 ms)
-    √ BONUS FINDING: GET /profile is a stub -- always returns { user: null, restaurant: null } regardless of the caller (restaurant.js:8-20) (8 ms)
+PASS tests/uc8-rate-order.test.js
+  UC8: Rate a delivered order (Customer)
+    √ main success scenario: a 1-5 star rating on an own delivered order is stored once (orders.js:245-303) (80 ms)
+    √ review is optional: rating without review stores an empty review string (53 ms)
+    √ extension 1a: invalid rating 0 / 6 / 3.5 / "four" -> 400 (orders.js:246) (4 tests)
+    √ extension 2a: order not found -> 404 (orders.js:262) (18 ms)
+    √ extension 2b: another customer's order -> 403 (orders.js:269) (18 ms)
+    √ extension 2c: order not delivered yet -> 400 (orders.js:273) (22 ms)
+    √ extension 2d: already rated -> 400, and the first rating survives (orders.js:278) (69 ms)
+    √ extension 3a (documented derivation): rating is written only to the order document — the restaurant document is byte-identical before and after (orders.js:291-294) (68 ms)
 
-Test Suites: 1 passed, 1 total
-Tests:       7 passed, 7 total
-```
-
-Command run: `npx jest tests/uc20-donation-impact.test.js --no-coverage --verbose`
-
-```
-PASS tests/uc20-donation-impact.test.js
-  UC20: See the donation impact (Meal-for-a-Meal)
-    √ main success scenario: meals donated = floor(delivered/10) (donations.js:15) (80 ms)
-    √ main scenario edge case: zero delivered orders -> zero meals donated (52 ms)
-    √ extension 2a (partial): POST /update rejects zero/negative meal amounts -> 400 (donations.js:47) (27 ms)
-    √ STAR FINDING: any unauthenticated caller can inflate the stored donation counter without bound (donations.js:59) (125 ms)
-    √ the counter has no upper bound and keeps compounding across repeated calls (donations.js:59) (93 ms)
-    √ POST /record logs a donation entry (donations.js:96-126) (45 ms)
-    √ POST /record rejects zero/negative amounts -> 400 (donations.js:101) (8 ms)
-    √ GET /history returns recorded donations, most recent first (donations.js:76-94) (25 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       8 passed, 8 total
+Tests:       11 passed, 11 total
 ```
 
 Command run: `npx jest tests/uc10-redeem-points.test.js --no-coverage --verbose`
 
 ```
-UC10: Redeem points for a discount (Customer)
-    √ main success scenario: redeem points at 1 point = $0.01, balance deducted and redemption logged (points.js:68-140) (110 ms)
-    √ extension 2a: points < 1 or non-integer -> 400 (points.js:69) (16 ms)
-    √ extension 3a: insufficient balance -> 400 with available vs. requested points (points.js:92-97) (30 ms)
-    √ extension 3b: no points record for the customer -> 404 (points.js:85-88) (31 ms)
-    √ STAR FINDING: concurrent redemptions double-spend a balance that should only cover ONE of them (points.js:82-127, no transaction around read-then-update) (77 ms)
-    √ POST /calculate-discount previews the discount WITHOUT deducting any points (points.js:142-186) (63 ms)
-    √ POST /calculate-discount: insufficient balance -> 400, same guard as /use (points.js:166-172) (33 ms)
-    √ POST /calculate-discount: no points record -> 404 (points.js:159-161) (30 ms)
+FAIL tests/uc10-redeem-points.test.js
+    √ main success scenario: redeem points at 1 point = $0.01, balance deducted and redemption logged (points.js:68-140) (80 ms)
+    √ extension 2a: points < 1 or non-integer -> 400 (points.js:69) (8 ms)
+    √ extension 3a: insufficient balance -> 400 with available vs. requested points (points.js:92-97) (19 ms)
+    √ extension 3b: no points record for the customer -> 404 (points.js:85-88) (19 ms)
+    √ STAR FINDING: concurrent redemptions double-spend a balance that should only cover ONE of them (points.js:82-127, no transaction around read-then-update) (50 ms)
+    √ POST /calculate-discount previews the discount WITHOUT deducting any points (points.js:142-186) (37 ms)
+    √ POST /calculate-discount: insufficient balance -> 400, same guard as /use (points.js:166-172) (19 ms)
+    √ POST /calculate-discount: no points record -> 404 (points.js:159-161) (19 ms)
+    × [DOC EXPECTATION] concurrent redemptions must not exceed the available balance (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior) (38 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 8 passed, 9 total
+```
 
-Test Suites: 1 passed, 1 total
-Tests:       8 passed, 8 total
+Command run: `npx jest tests/uc11-voice-control.test.js --no-coverage --verbose`
+
+```
+FAIL tests/uc11-voice-control.test.js
+  UC11: Control the app by voice (Customer)
+    √ main success scenario: spoken text is classified into one of the five known commands (voice.js:31-77) (42 ms)
+    √ a whitespace-padded model reply is trimmed before matching (voice.js:67-68) (5 ms)
+    √ extension 1a: missing or non-string userText {} / {"userText":""} / {"userText":42} -> 400 (voice.js:35-37) (3 tests)
+    √ extension 2a: no GEMINI_API_KEY -> 500, feature dead (voice.js:39-42) (2 ms)
+    √ extension 2b: unparseable model reply -> 422 with the raw text echoed (voice.js:71-75) (3 ms)
+    √ extension 2c: upstream Gemini HTTP error status is passed through (voice.js:83-87) (4 ms)
+    × [DOC EXPECTATION] a food-ordering app's voice feature should be able to add an item or place an order (EXPECTED TO FAIL — the action list is 5 navigation commands only, voice.js:6-12) (8 ms)
+
+Tests:       1 failed, 8 passed, 9 total
+```
+
+Command run: `npx jest tests/uc13-sales-insights.test.js --no-coverage --verbose`
+
+```
+PASS tests/uc13-sales-insights.test.js
+  UC13: Review sales performance (Restaurant)
+    √ main success scenario: returns exactly the restaurant's own orders (orders.js:113-142) (33 ms)
+    √ data contract for the client-side aggregation: totalAmount, status, and serialized dates are present (orders.js:127-137) (20 ms)
+    √ extension 2a: missing restaurantId -> 400 (orders.js:119) (3 ms)
+    √ extension 2b (documented cost): the endpoint returns the FULL raw order list — no server-side aggregation, pagination, or date filtering exists for the insights view (19 ms)
+
+Tests:       4 passed, 4 total
+```
+
+Command run: `npx jest tests/uc14-manage-menu.test.js --no-coverage --verbose`
+
+```
+FAIL tests/uc14-manage-menu.test.js
+    √ main success scenario: restaurant adds/edits menu items and customers see the update (restaurant.js: GET/PUT /menu) (96 ms)
+    √ extension 1a: missing ownerId on GET /menu -> 400 (restaurant.js:83) (2 ms)
+    √ extension 3a: PUT /menu with an invalid body fails express-validator -> 400 (restaurant.js:116) (3 ms)
+    √ extension 3b: PUT /menu for an ownerId with no matching restaurant user -> 404 (restaurant.js:131) (20 ms)
+    √ MISMATCH vs usecases.md 3c: PUT /profile for a restaurant with NO existing restaurant record does not "silently create" one -- it 500s (restaurant.js:51, Restaurant.findByOwnerId is undefined) (29 ms)
+    √ follow-up: the same PUT /profile crash also happens when a Restaurant record already exists -- proving the endpoint is unconditionally broken, not just the "no prior restaurant" edge case (20 ms)
+    √ BONUS FINDING: GET /profile is a stub -- always returns { user: null, restaurant: null } regardless of the caller (restaurant.js:8-20) (5 ms)
+    × [DOC EXPECTATION] usecases.md 3c: PUT /profile should silently create a restaurant when none exists (EXPECTED TO FAIL -- see MISMATCH test above for the real behavior) (20 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 7 passed, 8 total
 ```
 
 Command run: `npx jest tests/uc15-claim-delivery.test.js --no-coverage --verbose`
@@ -127,121 +228,73 @@ Tests:       9 passed, 9 total
 Command run: `npx jest tests/uc16-pickup-deliver.test.js --no-coverage --verbose`
 
 ```
-console.error
-    Deliver order error: TypeError: rider.updateDeliveryStatus is not a function
-        at updateDeliveryStatus (proj2/server/routes/delivery.js:278:21)
-
-PASS tests/uc16-pickup-deliver.test.js
-  UC16: Pick up and deliver an order (Delivery partner)
-    √ extension 1a: pickup never checks the order exists -- updates blind, and on a NONEXISTENT order that surfaces as an uncontrolled 500, not a clean 404 (delivery.js:204-209) (113 ms)
-    √ extension 1a (continued): pickup also blindly overwrites status on an order that exists but is NOT in a pickup-appropriate state (56 ms)
-    √ extension 2a: order not found at delivery -> 404 (delivery.js:234-236) (29 ms)
-    √ STAR FINDING (clean case): Partner B, never assigned, completes Partner A's delivery and is credited -- Partner A gets nothing (delivery.js:223-268) (473 ms)
-    √ UNRELATED BUG: completing a delivery for a rider with no other active order 500s AFTER already recording the delivery and paying out (delivery.js:278, User.updateDeliveryStatus is undefined) (351 ms)
-    √ STAR FINDING (common case, response is 500 due to the unrelated bug above, but the state corruption still fully lands) (370 ms)
-    √ note (time-permitting): an unreasonably large deliveryFee/tipAmount is accepted and paid out with no upper bound (delivery.js:244) (338 ms)
-    √ GET /orders (a rider reviewing their assignments) includes a computed earning field (delivery.js:37-85) (158 ms)
-    √ GET /orders requires a riderId -> 400 (delivery.js:42-44) (4 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       9 passed, 9 total
+FAIL tests/uc16-pickup-deliver.test.js
+    √ extension 1a: pickup never checks the order exists -- updates blind, and on a NONEXISTENT order that surfaces as an uncontrolled 500, not a clean 404 (delivery.js:204-209) (65 ms)
+    √ extension 1a (continued): pickup also blindly overwrites status on an order that exists but is NOT in a pickup-appropriate state (36 ms)
+    √ extension 2a: order not found at delivery -> 404 (delivery.js:234-236) (18 ms)
+    √ STAR FINDING (clean case): Partner B, never assigned, completes Partner A's delivery and is credited -- Partner A gets nothing (delivery.js:223-268) (337 ms)
+    √ UNRELATED BUG: completing a delivery for a rider with no other active order 500s AFTER already recording the delivery and paying out (delivery.js:278, User.updateDeliveryStatus is undefined) (264 ms)
+    √ STAR FINDING (common case, response is 500 due to the unrelated bug above, but the state corruption still fully lands) (290 ms)
+    √ note (time-permitting): an unreasonably large deliveryFee/tipAmount is accepted and paid out with no upper bound (delivery.js:244) (249 ms)
+    √ GET /orders (a rider reviewing their assignments) includes a computed earning field (delivery.js:37-85) (94 ms)
+    √ GET /orders requires a riderId -> 400 (delivery.js:42-44) (3 ms)
+    × [DOC EXPECTATION] only the assigned delivery partner should be able to complete an order and be paid (EXPECTED TO FAIL -- see STAR FINDING above for the real behavior) (245 ms)
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 9 passed, 10 total
 ```
 
-**Combined total: 41 / 41 passing** across all 5 files
-(`npx jest tests/uc*.test.js --no-coverage`, ~3.5s).
+Command run: `npx jest tests/uc17-delivery-map.test.js --no-coverage --verbose`
 
-## Results table
+```
+PASS tests/uc17-delivery-map.test.js
+  UC17: Watch my delivery on a map (Customer) — source inspection
+    √ the map is consumed ONLY by the customer order page — no delivery-partner screen references it (whole client/src scan) (12 ms)
+    √ the page itself labels the feature a simulation: a visible <h3>Delivery Simulation</h3> heading (Orders.tsx:503) (1 ms)
+    √ the courier position is linearly interpolated between two fixed points (DeliveryMap.tsx interpolate/startDeliveryAnimation)
+    √ the animation is a hardcoded 20 steps on a 1000 ms setInterval — 20 seconds regardless of any real delivery (DeliveryMap.tsx:89-104) (1 ms)
+    √ the animation is started by a button the customer presses, not by order state (DeliveryMap.tsx "Start Delivery")
+    √ no real position source can reach the component: its full props contract is {restaurant, customer, onDelivered?} (DeliveryMap.tsx:8-12) (1 ms)
 
-| Test | Why we tried it | Expected | What happened |
-|---|---|---|---|
-| UC14 main flow: add/edit menu items | Cover the happy path | 200, menu persisted and readable via GET | PASS |
-| UC14 ext 1a: missing ownerId on GET /menu | Doc'd extension | 400 | PASS |
-| UC14 ext 3a: PUT /menu invalid body | Doc'd extension | 400 | PASS |
-| UC14 ext 3b: PUT /menu unknown ownerId | Doc'd extension | 404 | PASS |
-| UC14 ext 3c: PUT /profile "silently creates" a restaurant | usecases.md says 200, silent creation | 200 | **Mismatch.** `Restaurant.findByOwnerId()` (`restaurant.js:51`) is called but never defined on the model. PUT /profile 500s unconditionally — with or without a pre-existing restaurant record. Worse than "silent creation," and not the specific bug the doc describes. |
-| UC14 new: GET /profile | Endpoint exists, untested by the doc | Some response reflecting the caller | **Finding.** Dead stub — always returns `{ user: null, restaurant: null }` regardless of input. |
-| UC20 main flow: floor(delivered/10) | Cover the happy path | 3 meals for 37 delivered orders | PASS |
-| UC20 ext 2a: reject zero/negative mealsToAdd | Doc'd guard (`donations.js:47`) | 400 | PASS |
-| UC20 star finding: unauthenticated counter inflation | Doc flags no bound on the increment endpoint (`donations.js:59`) | Some limit or auth check | **Finding, confirmed.** Any caller sets the counter to an arbitrary value (999,999,999 in one call), no auth, no bound. Nuance: `GET /stats` never reads that counter back into its response, so the tampering doesn't (yet) reach what a customer sees. |
-| UC20 new: POST /record, GET /history | Untested by the doc | Log + retrieve donation entries correctly | PASS |
-| UC10 main flow: redeem at 1pt = $0.01 | Cover the happy path | Balance deducted, transaction logged | PASS |
-| UC10 ext 2a/3a/3b: invalid points, insufficient balance, no record | Doc'd guards (`points.js:69, 92-97, 85-88`) | 400 / 400 / 404 | PASS |
-| UC10 star finding: concurrent redemption double-spend | Doc flags no transaction around read-then-update (`points.js:82-127`) | Second concurrent redemption refused | **Finding, confirmed, but not exactly as predicted.** Both concurrent requests get 200 (real double-spend: 120 pts of discount off a 100-pt balance). Stored balance lands at 40, not negative — both requests compute the same number off the same stale read. Only 1 of 2 "used" transactions survives in the log. |
-| UC10 new: POST /calculate-discount | Untested by the doc | Preview discount without deducting | PASS |
-| UC15 main flow + ext 2a-2d | Doc'd extensions (`delivery.js:111,116,123,134`) | 200 / 409 / 400 / 400 / 400 | PASS |
-| UC15 race: two partners claim the same order concurrently | Doc/brief predicts "exactly one 200, one 409" | One 200, one 409 | **Finding, same root cause as UC10.** No transaction around read-check-write (`delivery.js:100-146`); both requests get 200, deterministic across reruns. |
-| UC15 new: GET /available, POST /reject | Untested by the doc | List ready+unassigned; release a claim back to ready | PASS |
-| UC15 new finding: POST /reject has no ownership check | Found while adding /reject coverage | Only the assigned partner can reject | **Finding.** An uninvolved partner can un-assign someone else's legitimately claimed order — same bug shape as the UC16 headline finding. |
-| UC16 ext 1a: pickup never checks order exists | Doc'd extension (`delivery.js:204-209`) | Some handled error | **Finding.** Uncontrolled 500 (not a clean 404) on a nonexistent order; also blindly overwrites status on an order in the wrong state. |
-| UC16 ext 2a: deliver on nonexistent order | Doc'd extension | 404 | PASS |
-| UC16 star finding: wrong-partner delivery theft | Headline security bug per the brief | Only the assigned partner can complete + get paid | **Finding, fully confirmed.** Partner B (never assigned) completes Partner A's delivery; order marked delivered; Partner B credited $5; Partner A credited $0. `delivery.js:223-268` never compares caller vs. assigned partner. |
-| UC16 new finding: `User.updateDeliveryStatus` undefined | Found while building the fixture above | Delivery completion succeeds cleanly | **Finding.** Completing a delivery 500s in the *normal* case (rider has no other active order), after the order/points/earnings have already been persisted. |
-| UC16 new: unbounded fee/tip payout | Doc flags no cap (`delivery.js:244`) | Some cap | **Finding.** $999,999 + $999,999 credited with zero limit. |
-| UC16 new: GET /orders earning field | Untested by the doc | Computed `earning` = deliveryFee + tipAmount | PASS |
+Tests:       6 passed, 6 total
+```
 
-## Findings and explanations
+Command run: `npx jest tests/uc18-delivery-earnings.test.js --no-coverage --verbose`
 
-**UC14 — PUT /profile is completely broken, not just the "silent creation" edge case.**
-`restaurant.js:51` calls `Restaurant.findByOwnerId(user.id)`, but that method is never
-defined anywhere on the `Restaurant` model (confirmed by grepping the whole repo). Calling
-it throws a `TypeError`, caught by the route's own `catch`, surfacing as a 500 — for every
-call, regardless of whether a restaurant record already exists. `usecases.md`'s claim that
-this path "silently creates" a restaurant does not hold.
+```
+PASS tests/uc18-delivery-earnings.test.js
+  UC18: Review my delivery earnings (Delivery partner)
+    √ main success scenario: GET /orders exposes a computed per-order earning = deliveryFee + tipAmount (delivery.js:58-61) (32 ms)
+    √ missing riderId -> 400 (delivery.js:42-44) (3 ms)
+    √ non-numeric deliveryFee/tipAmount coerce to 0 in the displayed earning, not NaN (delivery.js:58-60) (18 ms)
+    √ server-side bookkeeping: totalEarnings accumulates across deliveries (delivery.js:266-268, User.js:153-166) (355 ms)
+    √ two-bookkeeping-systems finding: totalEarnings is written on delivery but GET /orders never serves it — the client recomputes from the order list instead (delivery.js:47-77, Insights.tsx:23-43) (21 ms)
 
-**UC20 — the counter-inflation vulnerability is real, but doesn't (yet) reach the customer.**
-`donations.js:59` lets any unauthenticated caller add an arbitrary amount to the stored
-`counter` field, with only a zero/negative check. But `GET /stats` (the endpoint the
-customer-facing donation display actually calls) never reads that field into its
-response — it always recomputes `floor(deliveredOrders / 10)` fresh. So the write-side hole
-is fully exploitable, but its stated consequence ("displayed count matches the tampered
-counter") isn't currently true.
+Tests:       5 passed, 5 total
+```
 
-**UC10 — double-spend confirmed, with a specific mechanism worth spelling out.**
-`points.js:82-127` reads the points doc, computes the new balance/transaction in plain JS,
-then calls `update()` — no `db.runTransaction()`. Two concurrent redemption requests for 60
-points each on a 100-point balance both read `availablePoints: 100` before either writes,
-so both pass the balance check and both get HTTP 200. The stored balance settles at 40 (not
-negative) because both requests compute `100 - 60` independently from the same stale read
-— whichever `update()` lands last just overwrites the field with the same number, a
-lost-update, not a cumulative decrement. The `transactions` array is fully overwritten
-(not appended) on each write too, so only one of the two redemptions survives in the
-audit log even though both actually happened.
+Command run: `npx jest tests/uc20-donation-impact.test.js --no-coverage --verbose`
 
-**UC15 — the same race exists in job-claiming, and a second, previously undocumented bug
-in /reject.** `delivery.js:100-146` (`POST /accept/:orderId`) has the identical
-read-check-write race as UC10. Separately, while adding coverage for `POST /reject/:orderId`
-(`delivery.js:164-191`), we found it never checks that the caller is the partner who
-actually claimed the order — an uninvolved rider can call `/reject` on someone else's
-claimed order and it succeeds, wiping out their legitimate claim.
+```
+PASS tests/uc20-donation-impact.test.js
+  UC20: See the donation impact (Meal-for-a-Meal)
+    √ main success scenario: meals donated = floor(delivered/10) (donations.js:15) (80 ms)
+    √ main scenario edge case: zero delivered orders -> zero meals donated (52 ms)
+    √ extension 2a (partial): POST /update rejects zero/negative meal amounts -> 400 (donations.js:47) (27 ms)
+    √ STAR FINDING: any unauthenticated caller can inflate the stored donation counter without bound (donations.js:59) (125 ms)
+    √ the counter has no upper bound and keeps compounding across repeated calls (donations.js:59) (93 ms)
+    √ POST /record logs a donation entry (donations.js:96-126) (45 ms)
+    √ POST /record rejects zero/negative amounts -> 400 (donations.js:101) (8 ms)
+    √ GET /history returns recorded donations, most recent first (donations.js:76-94) (25 ms)
 
-**UC16 — the headline finding, plus an unrelated crash discovered while testing it.**
-`delivery.js:223-268` (`POST /deliver/:orderId`) never compares the `riderId` in the
-request body against `orderData.deliveryPartnerId`. A completely uninvolved partner can
-mark someone else's order delivered and get credited the payout. Separately: `delivery.js:278`
-calls `rider.updateDeliveryStatus('free')`, a method never defined on `User` — this fires
-whenever the delivering rider has no other active order, which (per UC15's one-order-at-a-time
-rule) is the *normal* case. So most ordinary deliveries 500 at the very end, even though the
-order, points, and earnings have already been correctly persisted by that point.
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+```
 
-## Traceability table: tests ↔ use cases
+## Results and traceability
 
-| Test case | Use case | Coverage | Notes |
-|---|---|---|---|
-| `uc14-manage-menu.test.js` (7 tests) | UC14: Manage the menu | Yes | Main flow + all documented extensions; disproves the "silent creation" claim; new finding: GET /profile is a dead stub |
-| `uc20-donation-impact.test.js` (8 tests) | UC20: See the donation impact | Yes | Main flow + guard; confirms unauthenticated counter inflation; new: POST /record, GET /history covered |
-| `uc10-redeem-points.test.js` (8 tests) | UC10: Redeem points for a discount | Yes | Main flow + all documented guards; confirms concurrent double-spend; new: POST /calculate-discount covered |
-| `uc15-claim-delivery.test.js` (9 tests) | UC15: Claim a delivery job | Yes | Main flow + all documented extensions; confirms claim race; new finding: POST /reject has no ownership check |
-| `uc16-pickup-deliver.test.js` (9 tests) | UC16: Pick up and deliver an order | Yes | Main flow extensions + headline wrong-partner-delivery-theft finding; new finding: undefined `User.updateDeliveryStatus` crashes the common case |
-
-### Orphans — use cases with no test in this set
-
-None — all 5 assigned use cases (UC10, UC14, UC15, UC16, UC20) have coverage. (The
-remaining 15 use cases are covered by other team members' test files; see the top-level
-`results-table.md` / `traceability-table.md` for the full 20-UC picture.)
-
-### Orphans — tests mapped to no use case
-
-None.
+The per-test rows for all ten suites live in the shared tables —
+`results-table.md` and `traceability-table.md` (both ordered by UC) — rather
+than being duplicated here.
 
 ## Project's own tests: coverage and blind spots
 
