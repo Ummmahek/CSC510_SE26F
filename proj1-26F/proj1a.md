@@ -11,7 +11,7 @@
 Command run:
 
 ```bash
-cd /Users/cynthiadu/Github/CSC510_SE26F/proj2 && npx jest --config='{"rootDir":"..","testEnvironment":"node","testMatch":["**/proj1-26F/*.test.js"]}' --runTestsByPath ../proj1-26F/uc-usecases.test.js --runInBand --verbose
+cd proj2 && npx jest --config='{"rootDir":"..","testEnvironment":"node","testMatch":["**/proj1-26F/*.test.js"]}' --runTestsByPath ../proj1-26F/uc-usecases.test.js --runInBand --verbose
 ```
 
 Sample output:

@@ -1,8 +1,9 @@
 # Project 1A: Use-case validation notes
 
 Method notes, environment assumptions, findings, and raw output samples for
-every use-case test suite written so far (UC8, 10, 11, 13, 14, 15, 16, 17, 18,
-20 — ordered by UC number throughout). The per-test rows live in the shared
+test batches 1-2 (UC8, 10, 11, 13, 14, 15, 16, 17, 18, 20 — ordered by UC
+number throughout; batches 3-5 covering the other ten UCs are indexed in the
+assumptions section below). The per-test rows live in the shared
 `results-table.md` and `traceability-table.md`; this file is the methodology
 behind them.
 

@@ -2,8 +2,10 @@
 // Source under test: server/routes/orders.js GET /restaurant — the only server-side
 // half of this use case. The aggregation itself (volume/revenue charts) runs in the
 // browser (client/src/components/restaurant/Insights.tsx) and cannot be exercised
-// here: the client test runner is broken as inherited (react-router-dom v7 cannot be
-// resolved by CRA 5's Jest — see traceability notes). These tests therefore pin down
+// here: this suite runs under node Jest with no DOM, and Insights.tsx sits behind
+// the router-dependent client entry (the inherited App.test.tsx cannot resolve
+// react-router-dom; router-free components CAN be tested under the proj2/client
+// CRA runner — see uc5-build-cart.test.tsx). These tests therefore pin down
 // the data contract the client aggregation depends on.
 //
 // Environment note: Firestore is mocked (see tests/helpers/fakeFirestore.js).

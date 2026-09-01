@@ -18,7 +18,7 @@ Rows are ordered by use-case number so coverage gaps are visible at a glance.
 | `proj1-26F/uc-usecases.test.js` (UC6 test) | UC6 | Asserts the documented negative-total rejection — red on the real bug: 201 with an order created (presence-only validation) |
 | `proj2/tests/uc7-track-order.test.js` (8 tests) | UC7 | List happy path + scoping + guards; star finding: `confirmedAt` stamped on the wrong transition; GET /:id is a hardcoded stub (red test pins the fix); transitions unvalidated |
 | `proj2/tests/uc8-rate-order.test.js` (11 tests) | UC8 | All five documented guards hold; rating is immutable once set; no stored average exists (derived at read time) |
-| `proj1-26F/uc-usecases.test.js` (UC9 test) | UC9 | Delivery completion writes an earned transaction and updated totals to the points ledger (the earn-rate-vs-README finding remains non-automated — see results table) |
+| `proj1-26F/uc-usecases.test.js` (UC9 test) | UC9 | `awardPointsForOrder` (called directly, as the deliver route does) writes an earned transaction and updated totals to the points ledger; the full delivery trigger is exercised by UC16's suite (the earn-rate-vs-README finding remains non-automated — see results table) |
 | `proj2/tests/uc10-redeem-points.test.js` (9 tests) | UC10 | Main flow + all documented guards; confirms concurrent double-spend (star finding, see results table for exact behavior vs. prediction); new: POST /calculate-discount covered |
 | `proj2/tests/uc11-voice-control.test.js` (9 tests) | UC11 | All guards hold with Gemini mocked; upstream errors pass through; the headline gap (no ordering action) pinned by an intentional red test |
 | `proj1-26F/uc-usecases.test.js` (UC12 test) | UC12 | Asserts the documented kitchen workflow — red on the real bug: `pending → delivered` accepted with no transition guard (corroborates UC7's finding) |
@@ -33,14 +33,16 @@ Rows are ordered by use-case number so coverage gaps are visible at a glance.
 
 ### Orphans — use cases with no test (explain each)
 
-- **None — all 20 use cases have at least one test.** One documented finding
-  remains non-automated (UC9 earn-rate vs README; see the results table) and
-  one is documented-but-not-asserted (UC4's post-response crash at
-  `customer.js:155`).
+- **None — all 20 use cases have at least one test.** Documented findings that
+  remain non-automated: UC9 earn-rate vs README (results-table row), UC4's
+  post-response crash at `customer.js:155` (results-table row), and UC10
+  ext 5b/6a — points deducted before order creation with no rollback, and one
+  discount applied to every per-restaurant order (`usecases.md` UC10; client
+  Cart.tsx logic, discussed in `uc10-redeem-points.test.js:181-192`).
 
 ### Orphans — tests mapped to no use case
 
-- *(should be empty; if a test lands here, say what it is for or delete it)*
+- None — every test names the use case (and extension) it exercises.
 
 ## Verdict on the project's own tests (evidence collected 2026-08-28)
 
@@ -69,6 +71,29 @@ on the test step (the lint step above it is `false`), so the green "Build
 Passing" badge is configured to ignore test failures. A Codecov token is
 also committed in plaintext at line 44.
 
-TODO: map the 151 test *names* (readable even though unrunnable) onto our 20
-use cases to show what coverage was intended vs. what was blind (e.g.
-delivery-partner flows, all HTTP routes — supertest installed, never used).
+### Do the inherited tests cover UC1, UC3, UC4, UC5, UC7? Where are they blind?
+
+The suite is unrunnable, but its test *names* are readable, so intent can
+still be judged:
+
+| UC | Nearest own-test coverage (by name) | Blind to |
+|---|---|---|
+| **UC1** | `isValidUserRole`, `getDefaultDeliveryStatus`, `validateEmail`, `validatePhoneNumber` — standalone validators | The `/register` route itself: duplicate-email rejection, password storage, geocoding, the response shape |
+| **UC3** | `validateEmail`, `validatePhoneNumber` only | All four profile endpoints, address re-geocoding, the whole-map overwrite, the contract divergence between endpoints |
+| **UC4** | `isLocalLegend`, `calculateDeliveryTime`, `calculateDeliveryFee` — restaurant-attribute helpers | `GET /restaurants` and `/restaurants-by-distance`: the rating aggregation, the Haversine sort, the `profile.name` filter, the `restaurants[1]` crash |
+| **UC5** | `calculateOrderTotal`, `isValidOrder` — cart-total / line-item math on a hypothetical helper | `CartContext` itself: quantity merging, persistence, cross-restaurant carts — none of the actual React state logic |
+| **UC7** | `isValidStatusTransition` (~20 tests) — asserts a full order state machine | `orders.js` has **no such state machine**; the own suite tests transition rules the shipped code never implements. Also blind to `GET /customer`, the mock `GET /:id`, and the `confirmedAt` mislabel |
+
+**Overall:** the project's own tests aim exclusively at pure helper functions
+in a `businessLogic` module that (a) does not ship and (b) sits a layer
+*below* every real entry point. Not one of them drives an Express route or a
+React context. Our tests reach each UC through its actual interface (an HTTP
+route, or the `useCart` hook). `isValidStatusTransition` is the sharpest
+illustration of the blindness: ~20 passing-by-name tests encode an order
+state machine that `orders.js` simply does not have — which is exactly how
+UC7's "jump straight to delivered" defect survived.
+
+TODO: extend the name-mapping above to the remaining 15 UCs (e.g.
+`calculatePointsForOrder(100) === 10` encodes the README's 10% rate — the
+UC9 docs/code conflict — and `calculateTax`/`isValidDiscountCode` specify
+features that were never built).

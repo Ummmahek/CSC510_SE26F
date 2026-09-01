@@ -3,9 +3,12 @@
 // client/src/components/delivery/DeliveryMap.tsx.
 //
 // Environment note — why these are SOURCE-INSPECTION tests, not render tests: this
-// use case is client-only, and the inherited client test runner cannot load the app
-// at all (react-router-dom v7 is unresolvable by CRA 5's Jest; the root Jest has no
-// TSX transform either). Rather than leave UC17 with zero executable coverage, these
+// use case is client-only, DeliveryMap depends on the Google Maps SDK, and the
+// router-dependent client entry is blocked as inherited (App.test.tsx cannot resolve
+// react-router-dom; router-free components CAN run under the proj2/client CRA runner
+// — see uc5-build-cart.test.tsx — but rendering a Maps-SDK component would need a
+// full Maps mock; the root Jest has no TSX transform either). Rather than leave
+// UC17 with zero executable coverage, these
 // tests assert the headline finding directly against the component source: the
 // courier position shown to the customer is FABRICATED — a 20-step, 1-second-tick
 // linear interpolation started by a button the customer presses — with no input from

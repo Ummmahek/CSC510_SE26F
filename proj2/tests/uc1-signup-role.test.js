@@ -97,7 +97,7 @@ describe('UC1: Sign up with a role (New user)', () => {
     expect(second.body.error).toMatch(/already exists/i);
   });
 
-  test('BONUS FINDING: a geocoding failure is swallowed -- registration still succeeds with location: null (models/User.js:46-49, 67-69)', async () => {
+  test('BONUS FINDING: a geocoding failure is swallowed -- registration still succeeds with location: null (models/User.js:41-45, 67-69)', async () => {
     // profile.address is present but there is no GOOGLE_MAPS_API_KEY, so geocodeAddress() returns
     // null and the account is created with no coordinates. UC4's distance sort then has nothing
     // to work from, but nothing here signals that to the user.

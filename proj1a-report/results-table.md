@@ -6,11 +6,14 @@ found, not a mistake made. Failures are findings: explain them, never hide
 them. Rows marked **FAIL/finding** document a defect even when the Jest test
 itself passes (the test asserts actual behavior; the row judges that behavior
 against the use case). Tests titled `[DOC EXPECTATION]` assert the documented
-behavior and are intentionally red for the demo video.
+behavior and are intentionally red for the demo video — their rows are
+marked **FAIL (by design)**; each pairs with a green STAR/FINDING row and
+stays red until the app is fixed.
 
 ## How to run (five batches, all 20 use cases)
 
-From `proj2/` (after `npm install` at root and in `server/`), except batch 4:
+From `proj2/` (after `npm install` in `proj2/`, `proj2/server/`, and — for
+batch 4 — `proj2/client/`), except batch 4 which runs from `proj2/client/`:
 
 ```bash
 # batch 1 — UC10/14/15/16/20: 44 tests, 41 pass + 3 intentional red
@@ -30,7 +33,9 @@ npx jest --config='{"rootDir":"..","testEnvironment":"node","testMatch":["**/pro
 ```
 
 **Total: 120 tests — 110 pass, 10 red (8 `[DOC EXPECTATION]` + 2 asserting
-documented behavior against real bugs).** Raw output samples:
+documented behavior against real bugs).** (Batch 1's three red tests are
+represented in the table by their paired green STAR-FINDING rows rather than
+dedicated rows.) Raw output samples:
 `uc-validation-notes.md` (batches 1–2), `raw-output/*.txt` (batches 3–4),
 `../proj1-26F/proj1a.md` (batch 5).
 
@@ -38,7 +43,9 @@ documented behavior against real bugs).** Raw output samples:
 
 Firestore is mocked (`proj2/tests/helpers/fakeFirestore.js`), not the real
 emulator — Docker/gcloud/firebase-cli weren't available on the machines that
-wrote batches 1 and 3. Batch 3 added `QuerySnapshot.forEach()` to the fake:
+wrote batches 1 and 3 (batch 5 uses its own inline mock of
+`config/firebase`; batch 4 is client-only and needs no database at all).
+Batch 3 added `QuerySnapshot.forEach()` to the fake:
 real Firestore has it and `customer.js`'s rating aggregation relies on it; all
 pre-existing suites were verified unaffected. UC5 is client-only (there is no
 cart endpoint), so it runs under the `proj2/client` CRA/jsdom runner. If
@@ -67,33 +74,33 @@ concurrency findings (UC10, UC15) are worth re-running against it.
 | UC3 `[DOC EXPECTATION]`: address change must refresh coordinates | Assert the fix for the star finding as a red test | `location` ≠ old point after an address change | **FAIL (by design)** — `location` unchanged; stays red until the stale-coordinate path is fixed |
 | UC4 main flow: GET /restaurants | Cover the happy path | Every registered restaurant, with rating and menu | PASS |
 | UC4 finding: restaurant with no profile.name | Behaviour at `customer.js:96` | Restaurant listed, or an explicit reason it isn't | **FAIL/finding** — silently omitted from the list |
-| UC4 ext 2a: rating recomputed on every read | usecases.md ext 2a (`customer.js:97-122`) | A rating is shown | PASS — confirms the doc: recomputed by scanning every delivered order per request, no stored average |
+| UC4 ext 2a: rating recomputed on every read | usecases.md ext 2a (`customer.js:97-122`) | A rating is shown | PASS — confirms the doc: recomputed by scanning every delivered order per request, no stored average (the users doc has no `rating` field) |
 | UC4 new guard (undocumented): distance sort, missing userId | Found on the endpoint (`customer.js:173-175`); not in usecases.md | 400 | PASS — new finding, not a doc'd extension |
 | UC4 ext 3a/3b: unknown userId / no saved location | Doc'd extensions (`customer.js:183, 188`) | 404 / 400 | PASS |
 | UC4 main flow: distance sort, nearest-first | Cover the happy path (step 3) | Sorted nearest-first with a mileage figure | PASS |
-| UC4 finding (not automated): `console.log(restaurants[1].location)` | Found reading the handler (`customer.js:155`) | List endpoint works for any restaurant count | **FAIL/finding** — with 0 or 1 registered restaurants it throws a `TypeError` after `res.json()` sends 200 → `ERR_HTTP_HEADERS_SENT`; every UC4 test seeds ≥ 2 restaurants to avoid it |
+| UC4 finding (not automated): `console.log(restaurants[1].location)` | Found reading the handler (`customer.js:155`) | List endpoint works for any restaurant count | **FAIL/finding** — with 0 or 1 registered restaurants it throws a `TypeError` after `res.json()` sends 200 → `ERR_HTTP_HEADERS_SENT`; not automated (it would inject an unhandled-rejection warning into the raw output) — every UC4 test seeds ≥ 2 restaurants to avoid it |
 | UC5 main flow: add / re-add bumps quantity, running total | Cover the happy path | Quantities merge, running total correct | PASS |
 | UC5 main flow: adjust a quantity | Step 1 "adjusts quantities" | Total updates | PASS |
 | UC5: `updateQuantity(≤ 0)` removes the line | `CartContext.tsx:58-61` | Line removed | PASS |
 | UC5: removeItem / clearCart | Basic cart maintenance | Cart empties | PASS |
 | UC5 finding: cross-restaurant cart, no guard | usecases.md ext 3a | One coherent order per restaurant, or the mix is blocked | **FAIL/finding** — both items sit in one cart; the rule is only applied by a silent split at checkout (`client/src/components/customer/Cart.tsx:106`) |
-| UC5 star finding: cart lost on refresh | usecases.md ext 1a (`CartContext.tsx:37`) | Cart survives a refresh on the way to checkout | **FAIL/finding** — the cart is `useState` only; a remount empties it |
+| UC5 star finding: cart lost on refresh | usecases.md ext 1a (`CartContext.tsx:37`) | Cart survives a refresh on the way to checkout | **FAIL/finding** — the cart is `useState` only and nothing is written to `localStorage`; a remount empties it |
 | UC5 `[DOC EXPECTATION]`: cart survives a refresh | Assert the fix for the star finding as a red test | Items still present after remount | **FAIL (by design)** — empty after remount; stays red until the cart is persisted |
 | UC6 finding: negative totalAmount accepted | usecases.md ext 2b — validation is presence-only (`orders.js:34-40`) | 400, no order created | **FAIL (real bug)** — 201, order created; the test asserts the documented behavior and stays red (`proj1-26F/uc-usecases.test.js`) |
 | UC7 main flow: GET /customer order list | Cover the happy path | The customer's orders with current status | PASS |
 | UC7: list scoped to the customer | `orders.js:93-95` | Only this customer's orders | PASS |
 | UC7 ext 2a: missing customerId | Doc'd extension (`orders.js:89`) | 400 | PASS |
 | UC7: customer with no orders | Boundary | 200 + empty list, not an error | PASS |
-| UC7 star finding: confirmedAt tracks the wrong transition | usecases.md ext 2c (`orders.js:202`) | `confirmedAt` marks the "confirmed" transition | **FAIL/finding** — `→ confirmed` records no timestamp; `→ preparing` is what sets `confirmedAt` |
+| UC7 star finding: confirmedAt tracks the wrong transition | usecases.md ext 2c (`orders.js:202`) | `confirmedAt` marks the "confirmed" transition | **FAIL/finding** — `→ confirmed` records no timestamp; `→ preparing` is what sets `confirmedAt`, so a "Confirmed at …" label really shows the cook-start time |
 | UC7 finding: GET /:id is a stub | usecases.md main scenario (open an order to track it) | The real order for that id, or 404 | **FAIL/finding** — returns a hardcoded mock (`customerId: "customer123"`, one Pizza, `status: "pending"`) for any id, never reads Firestore (`orders.js:157-180`) |
-| UC7 ext 2b: transitions unvalidated | usecases.md ext 2b; UC12 ext 3a (`orders.js:184`) | Status advances through the documented sequence | **FAIL/finding** — `pending → delivered` in one call is accepted |
+| UC7 ext 2b: transitions unvalidated | usecases.md ext 2b; UC12 ext 3a (`orders.js:184`) | Status advances through the documented sequence | **FAIL/finding** — `pending → delivered` in one call is accepted; the tracked order then shows "Delivered" with `confirmedAt` and `readyAt` never set |
 | UC7 `[DOC EXPECTATION]`: GET /:id returns the real order | Assert the fix for the stub as a red test | Response reflects the seeded order | **FAIL (by design)** — returns the mock; stays red until `/:id` reads the store |
 | UC8 main + optional review | Happy path (`orders.js:245-303`) | 200, rating stored once | PASS |
 | UC8 ext 1a: rating 0 / 6 / 3.5 / "four" | Doc'd validator (`orders.js:246`) | 400 each | PASS |
 | UC8 ext 2a/2b/2c/2d: missing order / wrong customer / undelivered / already rated | Doc'd guards (`orders.js:262-278`) | 404 / 403 / 400 / 400 | PASS — and the first rating survives a second attempt |
 | UC8 ext 3a: no stored average updated | Doc says averages are derived at read time (`customer.js:97-122`) | Restaurant doc byte-identical before/after rating | PASS (finding confirmed) |
 | UC9 main flow: points awarded on delivery | Cover the earn path (`points.js:189-237`) | Earned transaction + updated totals persisted to the ledger | PASS (`proj1-26F/uc-usecases.test.js`) |
-| UC9 earn rate vs README *(still not automated — candidate follow-up)* | README promises "10% of bill" (15% for Local Legends, `README.md:102-103`); code awards `Math.floor(orderTotal)` = 1 pt/$, no Local Legends branch (`points.js:195`) | $50 order → 5 points | **Expected FAIL** — docs and code disagree; see `usecases.md` UC9 1a |
+| UC9 earn rate vs README *(still not automated — candidate follow-up)* | README promises "10% of bill" (15% for Local Legends, `proj2/README.md:102-103`); code awards `Math.floor(orderAmount)` = 1 pt/$, no Local Legends branch (`points.js:195`) | $50 order → 5 points | **Expected FAIL** — docs and code disagree; see `usecases.md` UC9 1a |
 | UC10 main flow: redeem at 1pt = $0.01 | Cover the happy path | Balance deducted, transaction logged | PASS |
 | UC10 ext 2a/3a/3b: invalid points, insufficient balance, no record | Doc'd guards (`points.js:69, 92-97, 85-88`) | 400 / 400 / 404 | PASS |
 | UC10 star finding: concurrent redemption double-spend | Doc flags no transaction around read-then-update (`points.js:82-127`) | Second concurrent redemption refused | **FAIL as a vulnerability, but not exactly as predicted.** Both concurrent requests get 200 (real double-spend: 120 pts of discount off a 100 pt balance). Stored balance lands at 40, not negative — both requests compute the same number off the same stale read. Only 1 of 2 "used" transactions survives in the log — the other is silently overwritten, so the audit trail undercounts the exploit. |
@@ -101,7 +108,7 @@ concurrency findings (UC10, UC15) are worth re-running against it.
 | UC11 main + trim | Happy path (`voice.js:31-77`) | 200 with one of the 5 action ids | PASS (Gemini mocked) |
 | UC11 ext 1a/2a/2b: bad input / no API key / unparseable reply | Doc'd guards (`voice.js:35-42,71-75`) | 400 / 500 / 422 | PASS |
 | UC11 ext 2c: upstream Gemini HTTP error | Error handler (`voice.js:83-87`) | Upstream status passed through | PASS — a Gemini 429 surfaces as our 429 |
-| UC11 [DOC EXPECTATION]: voice can order food | The feature's own name promises ordering | 200 with an ordering action | **FAIL on purpose** — the action list is 5 navigation commands (`voice.js:6-12`); a food-ordering app's voice feature cannot order food |
+| UC11 [DOC EXPECTATION]: voice can order food | The feature's own name promises ordering | 200 with an ordering action | **FAIL (by design)** — the action list is 5 navigation commands (`voice.js:6-12`); a food-ordering app's voice feature cannot order food |
 | UC12 finding: status transitions unguarded | usecases.md ext 3a (`orders.js:184`) | A `pending → delivered` leap rejected | **FAIL (real bug)** — accepted; test asserts the documented workflow and stays red (`proj1-26F/uc-usecases.test.js`; corroborates the UC7 ext 2b row) |
 | UC13 main: only own orders returned | Happy path (`orders.js:113-142`) | 2 of 3 seeded orders | PASS |
 | UC13 data contract for client charts | Insights.tsx aggregates client-side | totalAmount/status/parseable dates | PASS |
