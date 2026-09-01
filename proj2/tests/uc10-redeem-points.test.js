@@ -189,12 +189,11 @@ describe('UC10: Redeem points for a discount (Customer)', () => {
   // inside a plain (unawaited) `.forEach` -- so order creation is fire-and-forget relative to the
   // already-completed point deduction. There is no compensating "refund points" call anywhere in
   // this file or in points.js, so a later order-creation failure leaves the points gone with
-  // nothing to show for them. We did NOT add an automated test for it: this is React component
-  // logic, and jest.config.js pins
-  // `testEnvironment: 'node'` with no jsdom / @testing-library/react in this repo's
-  // devDependencies -- exercising Cart.tsx would mean standing up a whole new frontend test
-  // stack, which felt out of scope for a single secondary/time-permitting note. Flagging this
-  // explicitly rather than silently skipping it.
+  // nothing to show for them. We did NOT add an automated test for it here: this is React
+  // component logic and this suite runs under jest testEnvironment:'node' with no DOM.
+  // (Correction to an earlier version of this note: a frontend test stack DOES exist — the CRA
+  // jsdom/@testing-library runner in proj2/client works for router-free components, as
+  // uc5-build-cart.test.tsx later proved. Exercising Cart.tsx that way remains open work.)
 
   // --- Intentionally-failing "doc expectation" test ---
   // The STAR FINDING test above asserts what the code ACTUALLY does (both requests succeed).

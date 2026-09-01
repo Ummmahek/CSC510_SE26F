@@ -54,10 +54,20 @@ divergence from `usecases.md` in their own titles and in the shared tables.
   exists in `server/node_modules`), while mocking the package *directory*
   resolves to a different registry key, silently mocks nothing, and lets the
   suite make REAL calls to Google.
-- **UC17 uses source-inspection tests**: the use case is client-only and the
-  inherited client test runner cannot load the app (react-router-dom v7 vs
-  CRA 5 Jest), so its tests assert the fabricated-courier finding against the
-  component source with cited lines instead of rendering it.
+- **UC17 uses source-inspection tests**: the use case is client-only; the
+  inherited `App.test.tsx` breakage (react-router-dom unresolvable) blocks
+  router-dependent rendering and `DeliveryMap` additionally depends on the
+  Google Maps SDK. Router-free components CAN be tested under the
+  `proj2/client` CRA/jsdom runner — `uc5-build-cart.test.tsx` (batch 4)
+  proves it — so UC17's tests assert the fabricated-courier finding against
+  the component source with cited lines instead of rendering it.
+- **Batch 3 extended the fake** with `QuerySnapshot.forEach()` (real Firestore
+  has it; `customer.js`'s rating aggregation requires it). All earlier suites
+  verified unaffected.
+- **This file's samples cover batches 1–2 (UC8/10/11/13/14/15/16/17/18/20).**
+  Batch 3–4 samples (UC1/3/4/5/7) live in `raw-output/*.txt`; batch 5
+  (UC2/6/9/12/19) in `../proj1-26F/proj1a.md`. Run commands for all five
+  batches are consolidated in `results-table.md`.
 
 ## Findings and explanations (by use case)
 
