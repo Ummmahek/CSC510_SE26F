@@ -95,6 +95,11 @@ back-reference `users.teamId` — no array query needed. Members are capped
 at 10 so weekly progress can be computed with a single Firestore `in`
 query (limit 10).
 
+**Source of truth: `teams.memberIds`.** `users.teamId` is a cache of the
+same fact; on any disagreement, `memberIds` wins. Every join/leave MUST
+update both documents in a single Firestore **batched write** so they
+cannot diverge — do not write them in two separate calls.
+
 Join rule: the owner may only add users who have an **accepted**
 `friendships` doc with them — verified at the API level with one `get`
 on the deterministic friendship id. This is where M3 depends on M2.
@@ -108,8 +113,9 @@ on the deterministic friendship id. This is where M3 depends on M2.
 | `createdAt` | Date | yes | |
 | `updatedAt` | Date | yes | |
 
-Plus a new field on `users`: `teamId` (string, nullable) — back-reference.
-Firestore is schemaless, so no migration is needed.
+Plus a new field on `users`: `teamId` (string, nullable) — a cache-only
+back-reference (see source-of-truth rule above). Firestore is schemaless,
+so no migration is needed.
 
 ### 2.3 `challengeProgress` (M3)
 
@@ -196,7 +202,7 @@ erDiagram
         geopoint location
         map badges "snapshot, derived from orders"
         number totalEarnings "delivery role only"
-        string teamId "NEW (M3): backref to teams"
+        string teamId "NEW (M3): cache of teams.memberIds, backref"
     }
     ORDERS {
         string id PK
@@ -290,6 +296,49 @@ convention. Dotted lines are derivations, not stored references.)
    caller id the same way for now and be switched to the authenticated
    id when the trust layer merges. Do not invent a separate auth scheme
    here.
+6. **`delivered` is forgeable until the trust layer lands.** Challenge
+   progress and donation scores derive from delivered-order counts, but
+   today `PUT /api/orders/:id/status` accepts any transition from anyone
+   (Project 1a finding, `routes/orders.js:184` — no guard). The derived
+   numbers are only as trustworthy as the status transitions that feed
+   them, so the trust-layer milestone (authenticated, guarded
+   transitions) is a **prerequisite** for shipping the leaderboard or
+   challenge rewards as "verified" — do not implement rewards against
+   unguarded transitions and call them trustworthy.
+7. **Team membership has one source of truth.** `teams.memberIds` is
+   authoritative; `users.teamId` is a cache. Join/leave updates both in
+   one batched write; on disagreement, `memberIds` wins.
+8. **Leaderboard scaling policy.** The friends-scope board is derived in
+   real time (≤ a user's friend count). The global board is O(N) reads
+   if derived naively — serve it from a periodically refreshed top-K
+   snapshot (badgeService-style cache), not from a live scan per
+   request. Course-scale seed data makes the naive version work; the
+   policy exists so nobody "optimizes" by storing scores as truth.
+9. **Badge snapshot freshness is best-effort.** `users.badges` is only
+   refreshed when the badge route runs. The leaderboard treats a missing
+   or stale snapshot as 0 badge tiers rather than recomputing per
+   request — acceptable at course scale, and documented so a low badge
+   score is understood as staleness, not a bug.
+
+Smaller notes an implementer should know:
+
+- **Order ≠ checkout.** A multi-restaurant cart is split into one order
+  per restaurant at checkout (`client/.../Cart.tsx:106`), so
+  `deliveredOrders` metrics count order documents, not checkouts. A team
+  can inflate "orders" by splitting carts; accepted at course scale —
+  the definition language says "order documents" on purpose.
+- **Week boundaries are UTC.** `weekKey` is the ISO week computed in
+  UTC, so progress near Sunday midnight is unambiguous.
+- **Composite index caveat.** `where('customerId','in',members)` plus a
+  `createdAt` range needs a composite index on real Firestore; the
+  emulator does not enforce indexes, so this only surfaces in
+  production. Alternative that needs no index: one `==` query per member
+  (≤10), merged in code.
+- **Score weighting is a product decision, not a schema one.** The
+  formula in invariant 3 is dollar-dominated (points track spend); the
+  red-team round flagged the "disposable-income leaderboard" risk.
+  Normalization/weighting should be settled by the M0 eval — the schema
+  supports any weighting without change.
 
 ---
 
