@@ -83,7 +83,7 @@ describe('UC15: Claim a delivery job (Delivery partner)', () => {
   });
 
   test('extension 2d: partner already has an active order -> 400, one-at-a-time (delivery.js:134)', async () => {
-    const { riderA, orderId } = seedDeliveryFixture(db, {
+    const { riderA } = seedDeliveryFixture(db, {
       orderId: 'order-1',
       order: { deliveryPartnerId: 'rider-A', status: 'out_for_delivery' }, // already busy
     });

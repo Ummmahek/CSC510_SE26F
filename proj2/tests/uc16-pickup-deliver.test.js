@@ -183,7 +183,7 @@ describe('UC16: Pick up and deliver an order (Delivery partner)', () => {
     });
     await claim(riderA.id, orderId);
 
-    const res = await request(server)
+    await request(server)
       .post(`/api/delivery/deliver/${orderId}`)
       .send({ riderId: riderA.id });
 
