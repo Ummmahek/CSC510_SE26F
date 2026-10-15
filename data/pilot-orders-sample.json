@@ -1,0 +1,452 @@
+[
+  {
+    "orderId": "pilot-ord-001",
+    "customerId": "pilot_lead_01",
+    "group": "leaderboard",
+    "timestamp": "2026-09-08T18:24:00.000Z",
+    "items": [{ "name": "Margherita Pizza", "quantity": 1, "price": 14.50 }],
+    "totalAmount": 14.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-002",
+    "customerId": "pilot_ctrl_01",
+    "group": "control",
+    "timestamp": "2026-09-08T19:10:00.000Z",
+    "items": [{ "name": "Classic Cheeseburger", "quantity": 1, "price": 12.00 }],
+    "totalAmount": 12.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-003",
+    "customerId": "pilot_lead_01",
+    "group": "leaderboard",
+    "timestamp": "2026-09-11T20:15:00.000Z",
+    "items": [{ "name": "Garlic Knots", "quantity": 2, "price": 9.00 }],
+    "totalAmount": 9.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-004",
+    "customerId": "pilot_lead_02",
+    "group": "leaderboard",
+    "timestamp": "2026-09-09T12:30:00.000Z",
+    "items": [{ "name": "Chicken Shawarma Wrap", "quantity": 1, "price": 13.50 }],
+    "totalAmount": 13.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-005",
+    "customerId": "pilot_lead_02",
+    "group": "leaderboard",
+    "timestamp": "2026-09-12T19:45:00.000Z",
+    "items": [{ "name": "Falafel Plate", "quantity": 1, "price": 15.00 }],
+    "totalAmount": 15.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-006",
+    "customerId": "pilot_ctrl_02",
+    "group": "control",
+    "timestamp": "2026-09-10T18:00:00.000Z",
+    "items": [{ "name": "Pepperoni Calzone", "quantity": 1, "price": 16.00 }],
+    "totalAmount": 16.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-007",
+    "customerId": "pilot_lead_03",
+    "group": "leaderboard",
+    "timestamp": "2026-09-07T13:15:00.000Z",
+    "items": [{ "name": "Paneer Tikka Bowl", "quantity": 1, "price": 14.00 }],
+    "totalAmount": 14.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-008",
+    "customerId": "pilot_ctrl_03",
+    "group": "control",
+    "timestamp": "2026-09-11T19:20:00.000Z",
+    "items": [{ "name": "BBQ Bacon Burger", "quantity": 1, "price": 15.50 }],
+    "totalAmount": 15.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-009",
+    "customerId": "pilot_lead_03",
+    "group": "leaderboard",
+    "timestamp": "2026-09-13T18:50:00.000Z",
+    "items": [{ "name": "Garlic Naan & Samosas", "quantity": 1, "price": 11.00 }],
+    "totalAmount": 11.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-010",
+    "customerId": "pilot_lead_04",
+    "group": "leaderboard",
+    "timestamp": "2026-09-09T18:40:00.000Z",
+    "items": [{ "name": "Spicy Ramen", "quantity": 1, "price": 16.50 }],
+    "totalAmount": 16.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-011",
+    "customerId": "pilot_lead_04",
+    "group": "leaderboard",
+    "timestamp": "2026-09-12T20:10:00.000Z",
+    "items": [{ "name": "Gyoza & Edamame", "quantity": 1, "price": 12.00 }],
+    "totalAmount": 12.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-012",
+    "customerId": "pilot_ctrl_04",
+    "group": "control",
+    "timestamp": "2026-09-08T12:00:00.000Z",
+    "items": [{ "name": "Club Sandwich", "quantity": 1, "price": 11.50 }],
+    "totalAmount": 11.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-013",
+    "customerId": "pilot_lead_05",
+    "group": "leaderboard",
+    "timestamp": "2026-09-10T19:00:00.000Z",
+    "items": [{ "name": "Tacos Al Pastor (3)", "quantity": 1, "price": 13.00 }],
+    "totalAmount": 13.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-014",
+    "customerId": "pilot_ctrl_05",
+    "group": "control",
+    "timestamp": "2026-09-11T13:30:00.000Z",
+    "items": [{ "name": "Caesar Salad with Chicken", "quantity": 1, "price": 14.00 }],
+    "totalAmount": 14.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-015",
+    "customerId": "pilot_ctrl_06",
+    "group": "control",
+    "timestamp": "2026-09-09T20:00:00.000Z",
+    "items": [{ "name": "Veggie Stir Fry", "quantity": 1, "price": 13.00 }],
+    "totalAmount": 13.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-016",
+    "customerId": "pilot_ctrl_06",
+    "group": "control",
+    "timestamp": "2026-09-12T19:30:00.000Z",
+    "items": [{ "name": "Spring Rolls & Fried Rice", "quantity": 1, "price": 15.00 }],
+    "totalAmount": 15.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-017",
+    "customerId": "pilot_lead_06",
+    "group": "leaderboard",
+    "timestamp": "2026-09-15T18:15:00.000Z",
+    "items": [{ "name": "Meat Lovers Pizza", "quantity": 1, "price": 18.00 }],
+    "totalAmount": 18.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-018",
+    "customerId": "pilot_lead_06",
+    "group": "leaderboard",
+    "timestamp": "2026-09-18T19:40:00.000Z",
+    "items": [{ "name": "Wings (10 pcs)", "quantity": 1, "price": 14.50 }],
+    "totalAmount": 14.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-019",
+    "customerId": "pilot_lead_07",
+    "group": "leaderboard",
+    "timestamp": "2026-09-16T12:45:00.000Z",
+    "items": [{ "name": "Salmon Teriyaki Bento", "quantity": 1, "price": 19.00 }],
+    "totalAmount": 19.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-020",
+    "customerId": "pilot_lead_07",
+    "group": "leaderboard",
+    "timestamp": "2026-09-19T18:20:00.000Z",
+    "items": [{ "name": "Dragon Roll & Miso Soup", "quantity": 1, "price": 17.50 }],
+    "totalAmount": 17.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-021",
+    "customerId": "pilot_ctrl_07",
+    "group": "control",
+    "timestamp": "2026-09-16T18:30:00.000Z",
+    "items": [{ "name": "Pad Thai with Tofu", "quantity": 1, "price": 14.00 }],
+    "totalAmount": 14.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-022",
+    "customerId": "pilot_ctrl_08",
+    "group": "control",
+    "timestamp": "2026-09-17T19:15:00.000Z",
+    "items": [{ "name": "Greek Gyro with Fries", "quantity": 1, "price": 13.50 }],
+    "totalAmount": 13.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-023",
+    "customerId": "pilot_lead_08",
+    "group": "leaderboard",
+    "timestamp": "2026-09-14T19:00:00.000Z",
+    "items": [{ "name": "Butter Chicken with Rice", "quantity": 1, "price": 16.50 }],
+    "totalAmount": 16.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-024",
+    "customerId": "pilot_lead_08",
+    "group": "leaderboard",
+    "timestamp": "2026-09-18T20:30:00.000Z",
+    "items": [{ "name": "Garlic Roti & Mango Lassi", "quantity": 1, "price": 9.50 }],
+    "totalAmount": 9.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-025",
+    "customerId": "pilot_ctrl_09",
+    "group": "control",
+    "timestamp": "2026-09-18T18:00:00.000Z",
+    "items": [{ "name": "Spaghetti Bolognese", "quantity": 1, "price": 15.00 }],
+    "totalAmount": 15.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-026",
+    "customerId": "pilot_ctrl_09",
+    "group": "control",
+    "timestamp": "2026-09-20T19:00:00.000Z",
+    "items": [{ "name": "Tiramisu & Espresso", "quantity": 1, "price": 10.00 }],
+    "totalAmount": 10.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-027",
+    "customerId": "pilot_lead_09",
+    "group": "leaderboard",
+    "timestamp": "2026-09-15T13:00:00.000Z",
+    "items": [{ "name": "Chicken Quesadilla", "quantity": 1, "price": 12.50 }],
+    "totalAmount": 12.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-028",
+    "customerId": "pilot_lead_09",
+    "group": "leaderboard",
+    "timestamp": "2026-09-19T21:00:00.000Z",
+    "items": [{ "name": "Chips & Guacamole", "quantity": 1, "price": 8.00 }],
+    "totalAmount": 8.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-029",
+    "customerId": "pilot_ctrl_10",
+    "group": "control",
+    "timestamp": "2026-09-19T13:30:00.000Z",
+    "items": [{ "name": "Falafel Wrap", "quantity": 1, "price": 11.00 }],
+    "totalAmount": 11.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-030",
+    "customerId": "pilot_lead_10",
+    "group": "leaderboard",
+    "timestamp": "2026-09-22T18:30:00.000Z",
+    "items": [{ "name": "Mushroom Swiss Burger", "quantity": 1, "price": 14.50 }],
+    "totalAmount": 14.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-031",
+    "customerId": "pilot_lead_10",
+    "group": "leaderboard",
+    "timestamp": "2026-09-25T19:45:00.000Z",
+    "items": [{ "name": "Loaded Cheese Fries", "quantity": 1, "price": 8.50 }],
+    "totalAmount": 8.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-032",
+    "customerId": "pilot_ctrl_11",
+    "group": "control",
+    "timestamp": "2026-09-23T19:00:00.000Z",
+    "items": [{ "name": "Margherita Flatbread", "quantity": 1, "price": 13.00 }],
+    "totalAmount": 13.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-033",
+    "customerId": "pilot_lead_11",
+    "group": "leaderboard",
+    "timestamp": "2026-09-21T12:15:00.000Z",
+    "items": [{ "name": "Poke Bowl (Salmon)", "quantity": 1, "price": 17.00 }],
+    "totalAmount": 17.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-034",
+    "customerId": "pilot_lead_11",
+    "group": "leaderboard",
+    "timestamp": "2026-09-26T18:10:00.000Z",
+    "items": [{ "name": "Seaweed Salad & Miso", "quantity": 1, "price": 9.00 }],
+    "totalAmount": 9.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-035",
+    "customerId": "pilot_ctrl_12",
+    "group": "control",
+    "timestamp": "2026-09-24T18:45:00.000Z",
+    "items": [{ "name": "Chicken Tikka Masala", "quantity": 1, "price": 16.00 }],
+    "totalAmount": 16.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-036",
+    "customerId": "pilot_ctrl_13",
+    "group": "control",
+    "timestamp": "2026-09-25T13:00:00.000Z",
+    "items": [{ "name": "BLT Sandwich", "quantity": 1, "price": 10.50 }],
+    "totalAmount": 10.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-037",
+    "customerId": "pilot_lead_12",
+    "group": "leaderboard",
+    "timestamp": "2026-09-23T19:30:00.000Z",
+    "items": [{ "name": "Steak Burrito Bowl", "quantity": 1, "price": 15.50 }],
+    "totalAmount": 15.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-038",
+    "customerId": "pilot_lead_12",
+    "group": "leaderboard",
+    "timestamp": "2026-09-27T18:00:00.000Z",
+    "items": [{ "name": "Churros with Chocolate", "quantity": 1, "price": 7.50 }],
+    "totalAmount": 7.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-039",
+    "customerId": "pilot_ctrl_14",
+    "group": "control",
+    "timestamp": "2026-09-26T19:15:00.000Z",
+    "items": [{ "name": "Cheese Pizza Large", "quantity": 1, "price": 16.50 }],
+    "totalAmount": 16.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-040",
+    "customerId": "pilot_ctrl_15",
+    "group": "control",
+    "timestamp": "2026-09-27T20:00:00.000Z",
+    "items": [{ "name": "BBQ Chicken Wings", "quantity": 1, "price": 13.50 }],
+    "totalAmount": 13.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-041",
+    "customerId": "pilot_lead_13",
+    "group": "leaderboard",
+    "timestamp": "2026-09-28T18:00:00.000Z",
+    "items": [{ "name": "Crispy Chicken Sandwich", "quantity": 1, "price": 13.50 }],
+    "totalAmount": 13.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-042",
+    "customerId": "pilot_lead_13",
+    "group": "leaderboard",
+    "timestamp": "2026-10-02T19:30:00.000Z",
+    "items": [{ "name": "Waffle Fries & Shake", "quantity": 1, "price": 9.50 }],
+    "totalAmount": 9.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-043",
+    "customerId": "pilot_lead_14",
+    "group": "leaderboard",
+    "timestamp": "2026-09-29T12:30:00.000Z",
+    "items": [{ "name": "Tonkotsu Ramen", "quantity": 1, "price": 17.00 }],
+    "totalAmount": 17.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-044",
+    "customerId": "pilot_lead_14",
+    "group": "leaderboard",
+    "timestamp": "2026-10-03T20:15:00.000Z",
+    "items": [{ "name": "Pork Gyoza", "quantity": 1, "price": 8.00 }],
+    "totalAmount": 8.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-045",
+    "customerId": "pilot_ctrl_01",
+    "group": "control",
+    "timestamp": "2026-09-30T19:00:00.000Z",
+    "items": [{ "name": "Veggie Calzone", "quantity": 1, "price": 14.50 }],
+    "totalAmount": 14.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-046",
+    "customerId": "pilot_ctrl_02",
+    "group": "control",
+    "timestamp": "2026-10-01T18:45:00.000Z",
+    "items": [{ "name": "Chicken Caesar Wrap", "quantity": 1, "price": 12.50 }],
+    "totalAmount": 12.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-047",
+    "customerId": "pilot_ctrl_03",
+    "group": "control",
+    "timestamp": "2026-10-02T19:30:00.000Z",
+    "items": [{ "name": "Bacon Cheeseburger", "quantity": 1, "price": 15.00 }],
+    "totalAmount": 15.00,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-048",
+    "customerId": "pilot_ctrl_03",
+    "group": "control",
+    "timestamp": "2026-10-04T18:15:00.000Z",
+    "items": [{ "name": "Onion Rings & Soda", "quantity": 1, "price": 7.50 }],
+    "totalAmount": 7.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-049",
+    "customerId": "pilot_lead_15",
+    "group": "leaderboard",
+    "timestamp": "2026-09-29T18:10:00.000Z",
+    "items": [{ "name": "Four Cheese Pizza", "quantity": 1, "price": 17.50 }],
+    "totalAmount": 17.50,
+    "status": "delivered"
+  },
+  {
+    "orderId": "pilot-ord-050",
+    "customerId": "pilot_lead_15",
+    "group": "leaderboard",
+    "timestamp": "2026-10-03T19:00:00.000Z",
+    "items": [{ "name": "Nutella Pizza Dessert", "quantity": 1, "price": 11.00 }],
+    "totalAmount": 11.00,
+    "status": "delivered"
+  }
+]
