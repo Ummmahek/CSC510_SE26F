@@ -10,7 +10,9 @@
     "build": "cd client && npm run build",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "lint": "eslint --config .eslintrc.json tests/ jest.config.js",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "eval:m0": "node scripts/m0-eval.js",
+    "eval:m0:pilot": "node scripts/m0-eval.js --data=../data/pilot-orders-sample.json"
   },
   "keywords": [
     "food-delivery",

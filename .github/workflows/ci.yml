@@ -37,6 +37,12 @@ jobs:
         run: npm test
         continue-on-error: true
 
+      - name: Run M0 Repeat-Order Rate Evaluation (Synthetic Simulation)
+        run: npm run eval:m0
+
+      - name: Run M0 Repeat-Order Rate Evaluation (Pilot Dataset)
+        run: npm run eval:m0:pilot
+
       - name: Upload coverage to Codecov
         if: always() 
         uses: codecov/codecov-action@v4
@@ -45,5 +51,23 @@ jobs:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
+
+  m0-eval:
+    name: M0 Repeat-Order Rate Eval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run M0 Evaluation (Default Seeded Simulation)
+        run: node scripts/m0-eval.js
+
+      - name: Run M0 Evaluation (Pilot Data)
+        run: node scripts/m0-eval.js --data=data/pilot-orders-sample.json
 
 
